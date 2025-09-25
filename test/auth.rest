@@ -5,25 +5,110 @@ Content-Type: application/json
 
 {
   "name": "test",
-  "email": "test5@example.com",
-  "password": "Test5@"
+  "email": "test7@example.com",
+  "password": "password!2"
 }
 
 ### Login
 
-POST http://localhost:3000/api/login
+POST http://localhost:3000/api/auth/login
 Content-Type: application/json
 
 {
-  "email": "test5@example.com",
-  "password": "Test5@"
+  "email": "test@example.com",
+  "password": "password"
 }
 
 ### Logout
 
-POST http://localhost:3000/api/logout
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OGQ1MWI1NGNhMzk5Yzk1MjU4Y2EwMmEiLCJpYXQiOjE3NTg3OTY2MzQsImV4cCI6MTc1ODgwMDIzNH0.yO2qNGPH-x_D-KSawgHeUlwIACLLvAyaTz9jMJPQQAM
+POST http://localhost:3000/api/auth/logout
+Authorization: Bearer <token>
 
 ### Get Users
 
 GET http://localhost:3000/api/test
+
+### Create Group
+
+###
+
+POST http://localhost:3000/api/groups
+Content-Type: application/json
+
+{
+  "name": "My New Group"
+}
+
+###
+# @name GetAllGroups
+GET http://localhost:3000/api/groups
+
+###
+
+@id = 68d58831f435f826edb7a468
+@newName = Updated Group Name
+PUT http://localhost:3000/api/groups
+Content-Type: application/json
+
+{
+  "id": "{{id}}",
+  "name": "{{newName}}"
+}
+
+###
+# @name DeleteGroup
+@id = 68d58831f435f826edb7a468
+
+DELETE http://localhost:3000/api/groups
+Content-Type: application/json
+
+{
+  "id": "{{id}}"
+}
+
+### Create Expense
+POST http://localhost:3000/api/expenses
+Content-Type: application/json
+
+{
+  "description": "Lunch with friends",
+  "amount": 45.75,
+  "paidById": "68d58831f435f826edb7a467",
+  "groupId": "68d58831f435f826edb7a468",
+  "splitAmong": [
+    {
+      "userId": "68d58831f435f826edb7a467",
+      "amount": 15.25
+    },
+    {
+      "userId": "68d58831f435f826edb7a468",
+      "amount": 15.25
+    },
+    {
+      "userId": "68d58831f435f826edb7a469",
+      "amount": 15.25
+    }
+  ]
+}
+
+### Get All Expenses
+GET http://localhost:3000/api/expenses
+
+
+### Get Single Expense
+@expenseId = 68d58ca9f435f826edb7a46a
+@id = 68d58ca9f435f826edb7a46a
+GET http://localhost:3000/api/expenses/{{expenseId}}
+
+### Patch (Update) Single Expense
+PATCH http://localhost:3000/api/expenses/{{expenseId}}
+Content-Type: application/json
+
+{
+  "description": "Updated Lunch with friends",
+  "amount": 50.00
+}
+
+### Delete Single Expense
+DELETE http://localhost:3000/api/expenses/{{expenseId}}
+
