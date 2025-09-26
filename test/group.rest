@@ -80,7 +80,7 @@ Content-Type: application/json
   "expenseId": "68d6490e9c5c175dc5b0f5f8"
 }
 ### Update expense in group
-@expenseId = 68d64a7f9c5c175dc5b0f5fe
+@expenseId = 68d64cb405b5c4c5d4009c70
 @newAmount = 120
 @newDescription = Fancy Dinner
 

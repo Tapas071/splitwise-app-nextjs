@@ -3,10 +3,11 @@ import prisma from '../../../../../../lib/prisma';
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { groupId: string } }
+  ctx: RouteContext<'/api/groups/[groupId]/expense'>
 ) {
   try {
-    const { groupId } = params;
+     const { groupId } = await ctx.params
+    // const { groupId } = params;
     const { description, amount, paidById, splitAmong } = await req.json();
 
     if (!description || !amount || !paidById || !splitAmong) {
@@ -72,10 +73,10 @@ export async function POST(
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { groupId: string } }
+  ctx: RouteContext<'/api/groups/[groupId]/expense'> 
 ) {
   try {
-    const { groupId } = params;
+    const { groupId } = await ctx.params
 
     const expenses = await prisma.expense.findMany({
       where: { groupId },
@@ -97,10 +98,10 @@ export async function GET(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { groupId: string } }
+  ctx: RouteContext<'/api/groups/[groupId]/expense'> 
 ) {
   try {
-    const { groupId } = params;
+    const { groupId } = await ctx.params
     const { expenseId } = await req.json();
 
     if (!expenseId) {
@@ -141,10 +142,10 @@ export async function DELETE(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { groupId: string } }
+  ctx: RouteContext<'/api/groups/[groupId]/expense'> 
 ) {
   try {
-    const { groupId } = params;
+    const { groupId } = await ctx.params
     const { expenseId, description, amount, paidById, splitAmong } =
       await req.json();
 
