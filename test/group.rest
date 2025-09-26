@@ -30,3 +30,75 @@ Content-Type: application/json
 
 DELETE http://localhost:3000/api/groups/{{groupId}}
 Content-Type: application/json
+
+### Add member to group
+@userId = 68d51a6aca399c95258ca027
+POST http://localhost:3000/api/groups/{{groupId}}/member
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}"
+}
+
+### Delete member from group
+DELETE http://localhost:3000/api/groups/{{groupId}}/member
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}"
+}
+
+### Get Group expenses
+GET http://localhost:3000/api/groups/{{groupId}}/expense
+
+### Add expense to group
+@groupId = 68d63a57d6b7ffae7e6e1a58
+@paidById = 68d51a6aca399c95258ca027
+POST http://localhost:3000/api/groups/{{groupId}}/expense
+Content-Type: application/json
+
+{
+  "description": "Dinner",
+  "amount": 100,
+  "paidById": "{{paidById}}",
+  "splitAmong": [
+    {
+      "userId": "68d51a6aca399c95258ca027",
+      "amount": 50
+    },
+    {
+      "userId": "66a735197c33a349a2b4334a",
+      "amount": 50
+    }
+  ]
+}
+### Delete expense from group
+DELETE http://localhost:3000/api/groups/{{groupId}}/expense
+Content-Type: application/json
+
+{
+  "expenseId": "68d6490e9c5c175dc5b0f5f8"
+}
+### Update expense in group
+@expenseId = 68d64a7f9c5c175dc5b0f5fe
+@newAmount = 120
+@newDescription = Fancy Dinner
+
+PATCH http://localhost:3000/api/groups/{{groupId}}/expense
+Content-Type: application/json
+
+{
+"expenseId": "{{expenseId}}",
+"description": "{{newDescription}}",
+"amount": 120,
+"splitAmong": [
+{
+"userId": "68d51a6aca399c95258ca027",
+"amount": 60
+},
+{
+"userId": "66a735197c33a349a2b4334a",
+"amount": 60
+}
+]
+}

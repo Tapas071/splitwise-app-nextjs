@@ -5,6 +5,7 @@ export async function GET(req: NextRequest, ctx: RouteContext<'/api/users/[userI
      const { userId } = await ctx.params
     const user = await prisma.user.findUnique({
       where: { id: userId },
+      include: { groups: true },
     });
     if (!user) {
       return NextResponse.json({ error: 'user not found' }, { status: 404 });

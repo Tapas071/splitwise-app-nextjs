@@ -4,6 +4,6 @@ GET http://localhost:3000/api/users
 Content-Type: application/json
 
 ### get a single user
-@userId = 68d52e7fca399c95258ca02c
+@userId = 68d51a6aca399c95258ca027
 GET http://localhost:3000/api/users/{{userId}}
 Content-Type: application/json

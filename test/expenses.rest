@@ -44,3 +44,28 @@ Content-Type: application/json
 ### Delete Single Expense
 DELETE http://localhost:3000/api/expenses/{{expenseId}}
 
+### Add expense to group
+@groupId = 68d63a57d6b7ffae7e6e1a58
+@paidById = 68d51a6aca399c95258ca027
+POST http://localhost:3000/api/groups/{{groupId}}/add-expense
+Content-Type: application/json
+
+{
+  "description": "Dinner",
+  "amount": 100,
+  "paidById": "{{paidById}}",
+  "splitAmong": [
+    {
+      "userId": "68d51a6aca399c95258ca027",
+      "amount": 50
+    },
+    {
+      "userId": "66a735197c33a349a2b4334a",
+      "amount": 50
+    }
+  ]
+}
+
+### Delete expense
+DELETE http://localhost:3000/api/expenses/{{expenseId}}/delete
+
