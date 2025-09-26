@@ -5,18 +5,18 @@ Content-Type: application/json
 
 {
   "name": "test",
-  "email": "test7@example.com",
+  "email": "test10@example.com",
   "password": "password!2"
 }
 
 ### Login
 
-POST http://localhost:3000/api/auth/login
+POST http://localhost:3000/api/login
 Content-Type: application/json
 
 {
-  "email": "test@example.com",
-  "password": "password"
+  "email": "test10@example.com",
+  "password": "password!2"
 }
 
 ### Logout

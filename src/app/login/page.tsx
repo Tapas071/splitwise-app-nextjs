@@ -18,6 +18,7 @@ export default function LoginPage() {
 
       if (res.ok) {
         const { token } = await res.json();
+        
         router.push('/');
       } else {
         const data = await res.json();

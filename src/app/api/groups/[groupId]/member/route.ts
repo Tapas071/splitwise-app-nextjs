@@ -62,7 +62,7 @@ export async function DELETE(
   ctx: RouteContext<'/api/groups/[groupId]/expense'> 
 ) {
   try {
-     const { groupId } = await ctx.params
+    const { groupId } = await ctx.params
     const { userId } = await req.json();
 
     if (!userId) {

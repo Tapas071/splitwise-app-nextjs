@@ -1,40 +1,71 @@
-'use client';
+import { cookies, headers } from 'next/headers';
+import { jwtVerify } from 'jose';
+import HomePageClient from '@/components/HomePageClient';
+import axios from 'axios';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+interface Group {
+  id: string;
+  name: string;
+}
 
-export default function HomePage() {
-  const [token, setToken] = useState<string | null>(null);
+async function getGroups(requestHeaders: Headers): Promise<Group[]> {
+  const res = await fetch('http://localhost:3000/api/groups', {
+    headers: requestHeaders,
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    console.error(`Failed to fetch groups: ${res.status} ${res.statusText}`);
+    return [];
+  }
+  const data = await res.json();
+  return data || [];
+}
 
-  useEffect(() => {
-    setToken(localStorage.getItem('token'));
-  }, []);
+async function getUserGroups(userId: string, requestHeaders: Headers): Promise<Group[]> {
+  const res = await fetch(`http://localhost:3000/api/users/${userId}/groups`, {
+    headers: requestHeaders,
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    console.error(`Failed to fetch user groups: ${res.status} ${res.statusText}`);
+    return [];
+  }
+  const data = await res.json();
+  return data || [];
+}
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
-  };
+export default async function HomePage() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  console.log('Token from cookies:', token);
+  const rawHeaders = await headers();
+  const requestHeaders = new Headers(Object.fromEntries(rawHeaders.entries()));
 
+  let userId: string | null = null;
+  let joinedGroups: Group[] = [];
+  let availableGroups: Group[] = [];
+
+  if (token) {
+    try {
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
+      const { payload } = await jwtVerify(token, secret);
+      userId = payload.userId as string;
+
+      if (userId) {
+        const allGroups = await getGroups(requestHeaders);
+        const userGroups = await getUserGroups(userId, requestHeaders);
+        joinedGroups = userGroups;
+        availableGroups = allGroups;
+      }
+    } catch (error) {
+      console.error('Invalid token:', error);
+    }
+  }
   return (
-    <div className="container mx-auto px-4 py-16 text-center">
-      <h1 className="text-4xl font-bold mb-4 dark:text-white">Welcome to the App</h1>
-      <p className="text-lg text-muted-foreground mb-8 dark:text-gray-400">This is a sample application with authentication.</p>
-      {token ? (
-        <div>
-          <p className="mb-4 dark:text-gray-300">You are logged in.</p>
-          <Button onClick={handleLogout} variant="destructive">Logout</Button>
-        </div>
-      ) : (
-        <div className="flex justify-center gap-4">
-          <Button asChild>
-            <Link href="/login">Login</Link>
-          </Button>
-          <Button asChild variant="secondary">
-            <Link href="/signup">Sign Up</Link>
-          </Button>
-        </div>
-      )}
-    </div>
+    <HomePageClient
+      initialUserId={userId}
+      initialJoinedGroups={joinedGroups}
+      initialAvailableGroups={availableGroups}
+    />
   );
 }
