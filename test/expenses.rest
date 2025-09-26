@@ -1,0 +1,46 @@
+@expenseId = 68d58d3bf435f826edb7a46e
+
+
+### Create Expense
+POST http://localhost:3000/api/expenses
+Content-Type: application/json
+
+{
+  "description": "Lunch with friends",
+  "amount": 45.75,
+  "paidById": "68d58831f435f826edb7a467",
+  "groupId": "68d58831f435f826edb7a468",
+  "splitAmong": [
+    {
+      "userId": "68d58831f435f826edb7a467",
+      "amount": 15.25
+    },
+    {
+      "userId": "68d58831f435f826edb7a468",
+      "amount": 15.25
+    },
+    {
+      "userId": "68d58831f435f826edb7a469",
+      "amount": 15.25
+    }
+  ]
+}
+
+### Get All Expenses
+GET http://localhost:3000/api/expenses
+
+
+### Get Single Expense
+GET http://localhost:3000/api/expenses/{{expenseId}}
+### Patch (Update) Single Expense
+PATCH http://localhost:3000/api/expenses/{{expenseId}}
+Content-Type: application/json
+
+{
+  "description": "Updated Lunch with friends",
+  "amount": 50.00
+}
+
+### Delete Single Expense
+DELETE http://localhost:3000/api/expenses/{{expenseId}}
+

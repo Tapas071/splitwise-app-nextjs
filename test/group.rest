@@ -1,0 +1,32 @@
+@groupId = 68d63a57d6b7ffae7e6e1a58
+@newName = Updated Group Name
+
+### Create Group
+POST http://localhost:3000/api/groups
+Content-Type: application/json
+
+{
+  "name": "My New Group2"
+}
+
+### get a single group
+GET http://localhost:3000/api/groups/{{groupId}}
+
+### Get all groups
+# @name GetAllGroups
+GET http://localhost:3000/api/groups
+
+### update a group
+PUT http://localhost:3000/api/groups/{{groupId}}
+Content-Type: application/json
+
+{
+  "name": "{{newName}}"
+}
+
+### detele a group
+# @name DeleteGroup
+@id = 68d58831f435f826edb7a468
+
+DELETE http://localhost:3000/api/groups/{{groupId}}
+Content-Type: application/json
