@@ -11,6 +11,7 @@
     2. get single users
 
 ## TODO
-1. Fixed the authentication module
+1. integrate api leave groups, add expenses and remove expenses and split expenses
+
 
 
