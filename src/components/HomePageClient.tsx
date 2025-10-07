@@ -25,8 +25,7 @@ export default function HomePageClient({
   const [joinedGroups, setJoinedGroups] = useState(initialJoinedGroups);
   const [availableGroups, setAvailableGroups] = useState(initialAvailableGroups);
   const router = useRouter();
-  console.log("intialJoinedGroup",initialJoinedGroups)
-
+  
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
@@ -42,7 +41,7 @@ export default function HomePageClient({
   const handleJoinGroup = async (groupId: string) => {
     if (!userId) return;
     try {
-      const res = await fetch(`/api/groups/${groupId}/add-member`, {
+      const res = await fetch(`/api/groups/${groupId}/member`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
@@ -98,7 +97,7 @@ export default function HomePageClient({
           }
           <div className="mb-8">
             <h2 className="text-2xl font-bold mb-4 dark:text-white">Joined Groups</h2>
-            {joinedGroups.length > 0 ? (
+            {initialJoinedGroups.length > 0 ? (
               <ul className="space-y-2">
                 {joinedGroups.map((group) => (
                   <li

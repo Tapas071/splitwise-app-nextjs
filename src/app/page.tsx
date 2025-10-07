@@ -1,7 +1,6 @@
 import { cookies, headers } from 'next/headers';
 import { jwtVerify } from 'jose';
 import HomePageClient from '@/components/HomePageClient';
-import axios from 'axios';
 
 interface Group {
   id: string;
@@ -31,12 +30,14 @@ async function getUserGroups(userId: string, requestHeaders: Headers): Promise<G
     return [];
   }
   const data = await res.json();
-  return data || [];
+  const groups = data?.groups;
+  console.log('Fetched user groups:', groups);
+  return groups || [];
 }
 
 export default async function HomePage() {
   const cookieStore = await cookies();
-  const token = cookieStore.get('token')?.value;
+  const token = await  cookieStore.get('token')?.value;
   console.log('Token from cookies:', token);
   const rawHeaders = await headers();
   const requestHeaders = new Headers(Object.fromEntries(rawHeaders.entries()));
@@ -57,8 +58,12 @@ export default async function HomePage() {
         joinedGroups = userGroups;
         availableGroups = allGroups;
       }
-    } catch (error) {
-      console.error('Invalid token:', error);
+    } catch (error: any) {
+      if (error?.code === 'ERR_JWT_EXPIRED') {
+        console.log('Token has expired.');
+      } else {
+        console.error('Invalid token:', error);
+      }
     }
   }
   return (
