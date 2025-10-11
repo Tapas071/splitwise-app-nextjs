@@ -38,7 +38,7 @@ export async function middleware(req: NextRequest) {
   if (!token) {
     if (isApiRoute) {
       // If it's an API route, return 401 JSON response
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized token is missing' }, { status: 401 });
     }
     // If it's a page route, redirect to the login page
     const loginUrl = new URL('/login', req.url);

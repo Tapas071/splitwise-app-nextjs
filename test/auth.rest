@@ -5,7 +5,7 @@ Content-Type: application/json
 
 {
   "name": "test",
-  "email": "test10@example.com",
+  "email": "test11@example.com",
   "password": "password!2"
 }
 
@@ -15,14 +15,14 @@ POST http://localhost:3000/api/login
 Content-Type: application/json
 
 {
-  "email": "test10@example.com",
+  "email": "test11@example.com",
   "password": "password!2"
 }
 
 ### Logout
 
 POST http://localhost:3000/api/auth/logout
-Authorization: Bearer <token>
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2OGVhNTQ1N2IyOTJlOGNmNDM4ZjdjYjgiLCJleHAiOjE3NjAxOTEwODZ9.zxre13EAMkA8LLc9SlDo4pbLZsxDaluufRWnVrKPuRw
 
 ### Get Users
 

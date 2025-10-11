@@ -38,7 +38,6 @@ async function getUserGroups(userId: string, requestHeaders: Headers): Promise<G
 export default async function HomePage() {
   const cookieStore = await cookies();
   const token = await  cookieStore.get('token')?.value;
-  console.log('Token from cookies:', token);
   const rawHeaders = await headers();
   const requestHeaders = new Headers(Object.fromEntries(rawHeaders.entries()));
 

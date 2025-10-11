@@ -46,6 +46,7 @@ export default function HomePageClient({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),
       });
+      
       if (res.ok) {
         router.refresh();
       }
@@ -69,11 +70,15 @@ export default function HomePageClient({
       console.error('Failed to leave group:', error);
     }
   };
+  
+  const joinedGroupOnClickHandler = async (id: string) => {
+    router.push(`/groups/${id}`);
+  };
 
   return (
-    <div className="container mx-auto px-4 py-16">
+    <div className="container mx-auto px-4 py-16 bg-background text-foreground">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold dark:text-white">Welcome</h1>
+        <h1 className="text-4xl font-bold text-foreground">Welcome</h1>
         {userId ? (
           <Button onClick={handleLogout} variant="destructive">
             Logout
@@ -92,21 +97,28 @@ export default function HomePageClient({
 
       {userId && (
         <div>
-          {
-            userId && <p className="mb-8 text-muted-foreground dark:text-gray-400">User ID: {userId}</p>
-          }
+          {userId && (
+            <p className="mb-8 text-muted-foreground">
+              User ID: {userId}
+            </p>
+          )}
+          
           <div className="mb-8">
-            <h2 className="text-2xl font-bold mb-4 dark:text-white">Joined Groups</h2>
+            <h2 className="text-2xl font-bold mb-4 text-foreground">Joined Groups</h2>
             {initialJoinedGroups.length > 0 ? (
               <ul className="space-y-2">
                 {joinedGroups.map((group) => (
                   <li
                     key={group.id}
-                    className="flex justify-between items-center p-4 bg-gray-100 dark:bg-gray-800 rounded-lg"
+                    className="flex justify-between items-center p-4 bg-card border border-border rounded-lg hover:bg-accent transition-colors cursor-pointer"
+                    onClick={() => joinedGroupOnClickHandler(group.id)}
                   >
-                    <span className="dark:text-gray-300">{group.name}</span>
+                    <span className="text-card-foreground">{group.name}</span>
                     <Button
-                      onClick={() => handleLeaveGroup(group.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLeaveGroup(group.id);
+                      }}
                       variant="destructive"
                     >
                       Leave
@@ -115,28 +127,28 @@ export default function HomePageClient({
                 ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground dark:text-gray-400">
-                You haven't joined any groups yet.
+              <p className="text-muted-foreground">
+                You haven&apos;t joined any groups yet.
               </p>
             )}
           </div>
 
           <div>
-            <h2 className="text-2xl font-bold mb-4 dark:text-white">Available Groups</h2>
+            <h2 className="text-2xl font-bold mb-4 text-foreground">Available Groups</h2>
             {availableGroups.length > 0 ? (
               <ul className="space-y-2">
                 {availableGroups.map((group) => (
                   <li
                     key={group.id}
-                    className="flex justify-between items-center p-4 bg-gray-100 dark:bg-gray-800 rounded-lg"
+                    className="flex justify-between items-center p-4 bg-card border border-border rounded-lg hover:bg-accent transition-colors"
                   >
-                    <span className="dark:text-gray-300">{group.name}</span>
+                    <span className="text-card-foreground">{group.name}</span>
                     <Button onClick={() => handleJoinGroup(group.id)}>Join</Button>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-muted-foreground dark:text-gray-400">
+              <p className="text-muted-foreground">
                 No other groups available to join.
               </p>
             )}
@@ -146,7 +158,7 @@ export default function HomePageClient({
 
       {!userId && (
         <div className="text-center">
-          <p className="text-lg text-muted-foreground mb-8 dark:text-gray-400">
+          <p className="text-lg text-muted-foreground mb-8">
             Please login to see your groups.
           </p>
         </div>
