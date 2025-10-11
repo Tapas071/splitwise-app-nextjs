@@ -37,7 +37,7 @@ async function getUserGroups(userId: string, requestHeaders: Headers): Promise<G
 
 export default async function HomePage() {
   const cookieStore = await cookies();
-  const token = await  cookieStore.get('token')?.value;
+  const token = await  cookieStore.get('token')?.value || "";
   const rawHeaders = await headers();
   const requestHeaders = new Headers(Object.fromEntries(rawHeaders.entries()));
 
@@ -70,6 +70,7 @@ export default async function HomePage() {
       initialUserId={userId}
       initialJoinedGroups={joinedGroups}
       initialAvailableGroups={availableGroups}
+      token={token}
     />
   );
 }

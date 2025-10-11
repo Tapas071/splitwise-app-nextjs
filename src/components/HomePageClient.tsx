@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { LeaveGroupButton } from './LeaveGroupButton';
 
 interface Group {
   id: string;
@@ -14,12 +15,14 @@ interface HomePageClientProps {
   initialUserId: string | null;
   initialJoinedGroups: Group[];
   initialAvailableGroups: Group[];
+  token :string
 }
 
 export default function HomePageClient({ 
   initialUserId,
   initialJoinedGroups,
-  initialAvailableGroups
+  initialAvailableGroups,
+  token
 }: HomePageClientProps) {
   const [userId, setUserId] = useState(initialUserId);
   const [joinedGroups, setJoinedGroups] = useState(initialJoinedGroups);
@@ -114,15 +117,7 @@ export default function HomePageClient({
                     onClick={() => joinedGroupOnClickHandler(group.id)}
                   >
                     <span className="text-card-foreground">{group.name}</span>
-                    <Button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleLeaveGroup(group.id);
-                      }}
-                      variant="destructive"
-                    >
-                      Leave
-                    </Button>
+                    {userId && <LeaveGroupButton groupId={group.id} userId={userId} token={token} />}
                   </li>
                 ))}
               </ul>

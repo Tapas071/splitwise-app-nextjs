@@ -10,8 +10,15 @@
     1. get all users
     2. get single users
 
-## TODO
-1. integrate api leave groups, add expenses and remove expenses and split expenses
+## TODO ( frontend)
+1. create group ui
+2. remove expenses
+3. edit expenses ui
+4. add member in a group ui
+5. edit group ui
+6. delete group ui
+
+
 
 
 
