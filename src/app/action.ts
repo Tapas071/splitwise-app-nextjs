@@ -99,3 +99,46 @@ export const createExpense = async (
     throw new Error('An unexpected error occurred while creating the expense.');
   }
 };
+
+
+interface CreateGroupData {
+  name: string;
+}
+
+interface CreateGroupResponse {
+  id: string;
+  name: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const createGroup = async (
+  groupData: CreateGroupData,
+  token: string
+): Promise<CreateGroupResponse> => {
+  const baseURL = process.env.BASE_URL || "http://localhost:3000";
+
+  try {
+    const response = await axios.post<CreateGroupResponse>(
+      `${baseURL}/api/groups`,
+      groupData,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Failed to create group:', error.response?.data || error.message);
+      throw new Error(
+        error.response?.data?.message || 'Could not create group. Please try again.'
+      );
+    }
+    console.error('Unexpected error creating group:', error);
+    throw new Error('An unexpected error occurred while creating the group.');
+  }
+};

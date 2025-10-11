@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { LeaveGroupButton } from './LeaveGroupButton';
+import { CreateGroupModal } from '@/components/CreateGroupModal';
 
 interface Group {
   id: string;
@@ -15,7 +16,7 @@ interface HomePageClientProps {
   initialUserId: string | null;
   initialJoinedGroups: Group[];
   initialAvailableGroups: Group[];
-  token :string
+  token: string;
 }
 
 export default function HomePageClient({ 
@@ -58,22 +59,6 @@ export default function HomePageClient({
     }
   };
 
-  const handleLeaveGroup = async (groupId: string) => {
-    if (!userId) return;
-    try {
-      const res = await fetch(`/api/groups/${groupId}/delete-member`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
-      });
-      if (res.ok) {
-        router.refresh();
-      }
-    } catch (error) {
-      console.error('Failed to leave group:', error);
-    }
-  };
-  
   const joinedGroupOnClickHandler = async (id: string) => {
     router.push(`/groups/${id}`);
   };
@@ -105,6 +90,15 @@ export default function HomePageClient({
               User ID: {userId}
             </p>
           )}
+
+          {/* Create Group Section */}
+          <div className="mb-8 bg-card border border-border p-6 rounded-lg shadow-sm">
+            <h2 className="text-2xl font-bold mb-4 text-card-foreground">Create a New Group</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              Start a new group to track expenses with friends, family, or colleagues.
+            </p>
+            <CreateGroupModal token={token} />
+          </div>
           
           <div className="mb-8">
             <h2 className="text-2xl font-bold mb-4 text-foreground">Joined Groups</h2>
