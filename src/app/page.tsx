@@ -7,6 +7,12 @@ interface Group {
   name: string;
 }
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
 async function getGroups(requestHeaders: Headers): Promise<Group[]> {
   const res = await fetch('http://localhost:3000/api/groups', {
     headers: requestHeaders,
@@ -35,6 +41,19 @@ async function getUserGroups(userId: string, requestHeaders: Headers): Promise<G
   return groups || [];
 }
 
+async function getUserDetails(userId: string, requestHeaders: Headers): Promise<User | null> {
+  const res = await fetch(`http://localhost:3000/api/users/${userId}`, {
+    headers: requestHeaders,
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    console.error(`Failed to fetch user details for ${userId}: ${res.status} ${res.statusText}`);
+    return null;
+  }
+  const data = await res.json();
+  return data || null;
+}
+
 export default async function HomePage() {
   const cookieStore = await cookies();
   const token = await  cookieStore.get('token')?.value || "";
@@ -42,6 +61,7 @@ export default async function HomePage() {
   const requestHeaders = new Headers(Object.fromEntries(rawHeaders.entries()));
 
   let userId: string | null = null;
+  let userName: string | null = null;
   let joinedGroups: Group[] = [];
   let availableGroups: Group[] = [];
 
@@ -52,6 +72,10 @@ export default async function HomePage() {
       userId = payload.userId as string;
 
       if (userId) {
+        const userDetails = await getUserDetails(userId, requestHeaders);
+        if (userDetails) {
+          userName = userDetails.name;
+        }
         const allGroups = await getGroups(requestHeaders);
         const userGroups = await getUserGroups(userId, requestHeaders);
         joinedGroups = userGroups;
@@ -68,6 +92,7 @@ export default async function HomePage() {
   return (
     <HomePageClient
       initialUserId={userId}
+      initialUserName={userName}
       initialJoinedGroups={joinedGroups}
       initialAvailableGroups={availableGroups}
       token={token}

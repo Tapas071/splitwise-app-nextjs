@@ -48,7 +48,11 @@ export async function GET(req: NextRequest, ctx: RouteContext<'/api/groups/[grou
     const group = await prisma.group.findUnique({
       where: { id: groupId },
       include: {
-        members: true,
+        members: {
+          include: {
+            user: true,
+          },
+        },
         expenses: {
           include: {
             paidBy: true,

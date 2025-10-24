@@ -1,4 +1,4 @@
-@groupId = 68d63a57d6b7ffae7e6e1a58
+@groupId = 68ea88a360ab3a8df33ed8dc
 @newName = Updated Group Name
 
 
@@ -36,9 +36,10 @@ DELETE http://localhost:3000/api/groups/{{groupId}}
 Content-Type: application/json
 
 ### Add member to group
-@userId = 68d51a6aca399c95258ca027
+@userId = 68d53b43ca399c95258ca02f
 POST http://localhost:3000/api/groups/{{groupId}}/member
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2OGVhNTQ1N2IyOTJlOGNmNDM4ZjdjYjgiLCJleHAiOjE3NjE0MTA3OTh9.AM9owvJhywv8plTgLT_9ZBL49iYcJJ8oSHMWXZWYuIA
 
 {
   "userId": "{{userId}}"
@@ -60,6 +61,7 @@ GET http://localhost:3000/api/groups/{{groupId}}/expense
 @paidById = 68d51a6aca399c95258ca027
 POST http://localhost:3000/api/groups/{{groupId}}/expense
 Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2OGVhNTQ1N2IyOTJlOGNmNDM4ZjdjYjgiLCJleHAiOjE3NjE0MTA3OTh9.AM9owvJhywv8plTgLT_9ZBL49iYcJJ8oSHMWXZWYuIA
 
 {
   "description": "Dinner",

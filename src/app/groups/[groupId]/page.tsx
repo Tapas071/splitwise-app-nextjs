@@ -2,6 +2,7 @@ import React from 'react';
 import { getGroupData } from '../../action';
 import { Button } from '@/components/ui/button';
 import { AddExpenseModal } from '@/components/AddExpenseModal';
+import { AddMemberModal } from '@/components/AddMemberModal';
 import { cookies, headers } from 'next/headers';
 
 // import { ThemeToggle } from '@/components/ThemeToggle';
@@ -20,8 +21,8 @@ const GroupPage = async ({ params }: { params: { groupId: string } }) => {
   }, {});
 
   group.members.forEach((member: any) => {
-    if (member.name) {
-      memberNames[member.userId] = member.name;
+    if (member.user && member.user.name) {
+      memberNames[member.userId] = member.user.name;
     }
   });
 
@@ -35,7 +36,10 @@ const GroupPage = async ({ params }: { params: { groupId: string } }) => {
           {/* Members Section */}
           <div className="bg-card border border-border p-6 rounded-lg shadow-sm">
             <h2 className="text-2xl font-semibold mb-4 text-card-foreground">Members</h2>
-             <Button className="mt-6 w-full">Add Member</Button>
+             <AddMemberModal 
+              groupId={groupId}
+              token={token}
+            />
             <ul className="space-y-3">
               {group.members.map((member: any) => (
                 <li 
@@ -43,7 +47,7 @@ const GroupPage = async ({ params }: { params: { groupId: string } }) => {
                   className="flex justify-between items-center bg-muted p-3 rounded-md border border-border hover:bg-accent transition-colors"
                 >
                   <span className="font-medium text-muted-foreground">
-                    {memberNames[member.userId] || `User ID: ${member.userId}`}
+                    {member.user.name}
                   </span>
                 </li>
               ))}

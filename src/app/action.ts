@@ -142,3 +142,41 @@ export const createGroup = async (
     throw new Error('An unexpected error occurred while creating the group.');
   }
 };
+
+interface AddMemberResponse {
+  id: string;
+  groupId: string;
+  userId: string;
+}
+
+export const addMember = async (
+  groupId: string,
+  userId: string,
+  token: string
+): Promise<AddMemberResponse> => {
+  const baseURL = process.env.BASE_URL || "http://localhost:3000";
+
+  try {
+    const response = await axios.post<AddMemberResponse>(
+      `${baseURL}/api/groups/${groupId}/member`,
+      { userId },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error('Failed to add member:', error.response?.data || error.message);
+      throw new Error(
+        error.response?.data?.message || 'Could not add member. Please try again.'
+      );
+    }
+    console.error('Unexpected error adding member:', error);
+    throw new Error('An unexpected error occurred while adding the member.');
+  }
+};

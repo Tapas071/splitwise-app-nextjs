@@ -14,26 +14,33 @@ interface Group {
 
 interface HomePageClientProps {
   initialUserId: string | null;
+  initialUserName: string | null;
   initialJoinedGroups: Group[];
   initialAvailableGroups: Group[];
   token: string;
 }
 
-export default function HomePageClient({ 
+export default function HomePageClient({
   initialUserId,
+  initialUserName,
   initialJoinedGroups,
   initialAvailableGroups,
   token
 }: HomePageClientProps) {
   const [userId, setUserId] = useState(initialUserId);
+  const [userName, setUserName] = useState(initialUserName);
   const [joinedGroups, setJoinedGroups] = useState(initialJoinedGroups);
-  const [availableGroups, setAvailableGroups] = useState(initialAvailableGroups);
+  const [availableGroups, setAvailableGroups] = useState(() => {
+    const joinedGroupIds = new Set(initialJoinedGroups.map(group => group.id));
+    return initialAvailableGroups.filter(group => !joinedGroupIds.has(group.id));
+  });
   const router = useRouter();
   
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       setUserId(null);
+      setUserName(null);
       setJoinedGroups([]);
       setAvailableGroups([]);
       router.refresh();
@@ -85,9 +92,9 @@ export default function HomePageClient({
 
       {userId && (
         <div>
-          {userId && (
+          {userName && (
             <p className="mb-8 text-muted-foreground">
-              User ID: {userId}
+              Welcome, {userName}!
             </p>
           )}
 
