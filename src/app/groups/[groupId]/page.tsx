@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { AddExpenseModal } from '@/components/AddExpenseModal';
 import { AddMemberModal } from '@/components/AddMemberModal';
 import { cookies, headers } from 'next/headers';
+import Link from 'next/link';
 
 // import { ThemeToggle } from '@/components/ThemeToggle';
 
@@ -105,6 +106,11 @@ const GroupPage = async ({ params }: { params: { groupId: string } }) => {
             </ul>
         
           </div>
+        </div>
+        <div className="flex justify-center mt-8">
+          <Button asChild>
+            <Link href={`/groups/${groupId}/settlement`}>View Settlement</Link>
+          </Button>
         </div>
       </div>
     </>

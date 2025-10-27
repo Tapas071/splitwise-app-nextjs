@@ -25,15 +25,38 @@ interface AddExpenseModalProps {
   token: string;
 }
 
+interface CustomSplit {
+  userId: string;
+  amount: string;
+}
+
 export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExpenseModalProps) => {
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [paidBy, setPaidBy] = useState('');
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [splitType, setSplitType] = useState<'equal' | 'custom'>('equal');
+  const [customSplits, setCustomSplits] = useState<CustomSplit[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  // Initialize custom splits when selected members change
+  React.useEffect(() => {
+    setCustomSplits(selectedMembers.map(userId => ({
+      userId,
+      amount: '',
+    })));
+  }, [selectedMembers]);
+
+  const handleCustomSplitChange = (userId: string, value: string) => {
+    setCustomSplits(prev =>
+      prev.map(split =>
+        split.userId === userId ? { ...split, amount: value } : split
+      )
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,19 +64,44 @@ export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExp
     setError(null);
 
     try {
-      // Calculate split amount
       const totalAmount = parseFloat(amount);
-      const splitAmount = totalAmount / selectedMembers.length;
+      if (isNaN(totalAmount) || totalAmount <= 0) {
+        throw new Error('Please enter a valid amount.');
+      }
+
+      let splitAmongData: { userId: string; amount: number }[] = [];
+
+      if (splitType === 'equal') {
+        if (selectedMembers.length === 0) {
+          throw new Error('Please select members to split the expense.');
+        }
+        const equalSplitAmount = totalAmount / selectedMembers.length;
+        splitAmongData = selectedMembers.map(userId => ({
+          userId,
+          amount: parseFloat(equalSplitAmount.toFixed(2)), // Ensure 2 decimal places
+        }));
+      } else { // custom split
+        let customTotal = 0;
+        splitAmongData = customSplits.map(split => {
+          const splitAmount = parseFloat(split.amount);
+          if (isNaN(splitAmount) || splitAmount < 0) {
+            throw new Error(`Please enter a valid amount for ${memberNames[split.userId] || split.userId}.`);
+          }
+          customTotal += splitAmount;
+          return { userId: split.userId, amount: splitAmount };
+        });
+
+        if (Math.abs(customTotal - totalAmount) > 0.01) { // Allow for minor floating point inaccuracies
+          throw new Error(`Custom split amounts do not add up to the total amount. Remaining: ${(totalAmount - customTotal).toFixed(2)}`);
+        }
+      }
 
       const expenseData = {
         groupId,
         description,
         amount: totalAmount,
         paidById: paidBy,
-        splitAmong: selectedMembers.map(userId => ({
-          userId,
-          amount: splitAmount
-        }))
+        splitAmong: splitAmongData,
       };
 
       await createExpense(expenseData, token);
@@ -63,6 +111,8 @@ export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExp
       setAmount('');
       setPaidBy('');
       setSelectedMembers([]);
+      setSplitType('equal');
+      setCustomSplits([]);
       setOpen(false);
 
       // Refresh the page to show new expense immediately
@@ -76,19 +126,24 @@ export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExp
   };
 
   const toggleMember = (userId: string) => {
-    setSelectedMembers(prev =>
-      prev.includes(userId)
+    setSelectedMembers(prev => {
+      const newSelected = prev.includes(userId)
         ? prev.filter(id => id !== userId)
-        : [...prev, userId]
-    );
+        : [...prev, userId];
+      return newSelected;
+    });
   };
+
+  const currentTotalAmount = parseFloat(amount) || 0;
+  const currentCustomSplitTotal = customSplits.reduce((acc, split) => acc + (parseFloat(split.amount) || 0), 0);
+  const remainingAmount = currentTotalAmount - currentCustomSplitTotal;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="mt-6 w-full">Add Expense</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] bg-popover border-border">
+      <DialogContent className="sm:max-w-[500px] bg-popover border-border max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-popover-foreground">Add New Expense</DialogTitle>
           <DialogDescription className="text-muted-foreground">
@@ -162,7 +217,7 @@ export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExp
             <label className="block text-sm font-medium mb-2 text-foreground">
               Split Among
             </label>
-            <div className="space-y-2 max-h-40 overflow-y-auto border border-input rounded-md p-3 bg-muted">
+            <div className="space-y-2 max-h-60 overflow-y-auto border border-input rounded-md p-3 bg-muted">
               {members.map((member) => (
                 <label
                   key={member.id}
@@ -181,12 +236,64 @@ export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExp
                 </label>
               ))}
             </div>
-            {selectedMembers.length > 0 && (
-              <p className="text-xs text-muted-foreground mt-2">
-                Each person will pay: <span className="font-medium text-chart-1">${amount ? (parseFloat(amount) / selectedMembers.length).toFixed(2) : '0.00'}</span>
-              </p>
-            )}
           </div>
+
+          {selectedMembers.length > 0 && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium mb-2 text-foreground">
+                Split Type
+              </label>
+              <div className="flex gap-4">
+                <Button
+                  type="button"
+                  variant={splitType === 'equal' ? 'default' : 'outline'}
+                  onClick={() => setSplitType('equal')}
+                  disabled={isLoading}
+                >
+                  Split Equally
+                </Button>
+                <Button
+                  type="button"
+                  variant={splitType === 'custom' ? 'default' : 'outline'}
+                  onClick={() => setSplitType('custom')}
+                  disabled={isLoading}
+                >
+                  Split Custom
+                </Button>
+              </div>
+
+              {splitType === 'equal' && (selectedMembers.length > 0) && ( // Only show if members are selected
+                <p className="text-sm text-muted-foreground mt-2">
+                  Each person will pay: <span className="font-medium text-chart-1">${amount ? (parseFloat(amount) / selectedMembers.length).toFixed(2) : '0.00'}</span>
+                </p>
+              )}
+
+              {splitType === 'custom' && (selectedMembers.length > 0) && (
+                <div className="space-y-2 mt-2">
+                  {customSplits.map((split) => (
+                    <div key={split.userId} className="flex items-center gap-2">
+                      <label className="w-1/2 text-sm text-foreground">
+                        {memberNames[split.userId] || `User ID: ${split.userId}`}
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={split.amount}
+                        onChange={(e) => handleCustomSplitChange(split.userId, e.target.value)}
+                        disabled={isLoading}
+                        className="w-1/2 px-3 py-2 bg-background text-foreground border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  ))}
+                  <p className={`text-sm mt-2 ${remainingAmount < 0 || remainingAmount > 0.01 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                    Remaining to split: <span className="font-medium">${remainingAmount.toFixed(2)}</span>
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-4">
             <Button
@@ -199,7 +306,7 @@ export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExp
             </Button>
             <Button
               type="submit"
-              disabled={!description || !amount || !paidBy || selectedMembers.length === 0 || isLoading}
+              disabled={!description || !amount || !paidBy || selectedMembers.length === 0 || isLoading || (splitType === 'custom' && (remainingAmount < 0 || remainingAmount > 0.01))}
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">

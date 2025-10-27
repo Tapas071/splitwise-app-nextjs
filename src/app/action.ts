@@ -76,6 +76,7 @@ export const createExpense = async (
   const baseURL = process.env.BASE_URL || "http://localhost:3000";
 
   try {
+    console.log('Sending expense data:', JSON.stringify(expenseData, null, 2)); // Add this line
     const response = await axios.post<CreateExpenseResponse>(
       `${baseURL}/api/expenses`,
       expenseData,
