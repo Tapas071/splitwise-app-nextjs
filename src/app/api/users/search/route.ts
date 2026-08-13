@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '../../../../../lib/prisma';
+import { getDb, serializeDoc } from '../../../../../lib/mongodb';
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,20 +10,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Missing "name" query parameter' }, { status: 400 });
     }
 
-    const users = await prisma.user.findMany({
-      where: {
-        name: {
-          contains: name,
-          mode: 'insensitive',
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-      },
-    });
+    const db = await getDb();
+    const users = await db.collection('users').find({
+      name: { $regex: name, $options: 'i' },
+    }).project({ password: 0 }).toArray();
 
-    return NextResponse.json(users, { status: 200 });
+    return NextResponse.json(users.map((user) => serializeDoc(user)), { status: 200 });
   } catch (error) {
     console.error('Error searching users:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

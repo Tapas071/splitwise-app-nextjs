@@ -43,10 +43,10 @@ async function getSettlementData(groupId: string, token: string): Promise<Settle
   }
 }
 
-const SettlementPage = async ({ params }: { params: { groupId: string } }) => {
-  const { groupId } = params;
-      const cookieStore = await cookies();
-      const token = await  cookieStore.get('token')?.value || "";
+const SettlementPage = async ({ params }: { params: Promise<{ groupId: string }> }) => {
+  const { groupId } = await params;
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value || "";
 
   const settlementData = await getSettlementData(groupId, token);
 

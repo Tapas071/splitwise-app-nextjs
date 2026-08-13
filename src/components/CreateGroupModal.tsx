@@ -10,7 +10,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { createGroup } from '@/app/action';
 import { useRouter } from 'next/navigation';
 
 interface CreateGroupModalProps {
@@ -30,7 +29,19 @@ export const CreateGroupModal = ({ token }: CreateGroupModalProps) => {
     setError(null);
 
     try {
-      await createGroup({ name: groupName }, token);
+      const response = await fetch('/api/groups', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: groupName }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Failed to create group. Please try again.');
+      }
 
       // Reset form and close modal
       setGroupName('');

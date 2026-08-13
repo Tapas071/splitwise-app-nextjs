@@ -1,7 +1,7 @@
-import prisma from '../../../../../lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
+import { getDb, serializeDoc } from '../../../../../lib/mongodb';
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,9 +11,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-    });
+    const db = await getDb();
+    const users = db.collection('users');
+    const user = await users.findOne({ email });
 
     if (!user) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
@@ -26,12 +26,15 @@ export async function POST(req: NextRequest) {
     }
 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key');
-    const token = await new SignJWT({ userId: user.id })
+    const token = await new SignJWT({ userId: user._id.toString() })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('24h')
       .sign(secret);
 
-    const response = NextResponse.json({ message: 'Login successful' });
+    const response = NextResponse.json({
+      message: 'Login successful',
+      user: serializeDoc(user),
+    });
     response.cookies.set('token', token, { httpOnly: true, path: '/' });
 
     return response;
