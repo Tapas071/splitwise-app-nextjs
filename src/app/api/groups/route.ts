@@ -35,7 +35,7 @@ export async function GET() {
   try {
     const db = await getDb();
     const allGroups = await db.collection('groups').find({}).toArray();
-    return NextResponse.json(allGroups.map((group) => serializeDoc(group)), { status: 200 });
+    return NextResponse.json(allGroups.map((group:any) => serializeDoc(group)), { status: 200 });
   } catch (error) {
     console.error('Error fetching groups:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
