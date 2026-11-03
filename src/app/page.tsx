@@ -1,6 +1,7 @@
-import { cookies, headers } from 'next/headers';
+import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import HomePageClient from '@/components/HomePageClient';
+import prisma from '../../lib/prisma';
 
 interface Group {
   id: string;
@@ -13,53 +14,30 @@ interface User {
   email: string;
 }
 
-async function getGroups(requestHeaders: Headers): Promise<Group[]> {
-  const res = await fetch('http://localhost:3000/api/groups', {
-    headers: requestHeaders,
-    cache: 'no-store',
+async function getGroups(): Promise<Group[]> {
+  return prisma.group.findMany({
+    select: { id: true, name: true },
   });
-  if (!res.ok) {
-    console.error(`Failed to fetch groups: ${res.status} ${res.statusText}`);
-    return [];
-  }
-  const data = await res.json();
-  return data || [];
 }
 
-async function getUserGroups(userId: string, requestHeaders: Headers): Promise<Group[]> {
-  const res = await fetch(`http://localhost:3000/api/users/${userId}/groups`, {
-    headers: requestHeaders,
-    cache: 'no-store',
+async function getUserGroups(userId: string): Promise<Group[]> {
+  const memberships = await prisma.userGroup.findMany({
+    where: { userId },
+    select: { group: { select: { id: true, name: true } } },
   });
-  if (!res.ok) {
-    console.error(`Failed to fetch user groups: ${res.status} ${res.statusText}`);
-    return [];
-  }
-  const data = await res.json();
-  const groups = data?.groups;
-  console.log('Fetched user groups:', groups);
-  return groups || [];
+  return memberships.map(({ group }) => group);
 }
 
-async function getUserDetails(userId: string, requestHeaders: Headers): Promise<User | null> {
-  const res = await fetch(`http://localhost:3000/api/users/${userId}`, {
-    headers: requestHeaders,
-    cache: 'no-store',
+async function getUserDetails(userId: string): Promise<User | null> {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, email: true },
   });
-  if (!res.ok) {
-    console.error(`Failed to fetch user details for ${userId}: ${res.status} ${res.statusText}`);
-    return null;
-  }
-  const data = await res.json();
-  return data || null;
 }
 
 export default async function HomePage() {
   const cookieStore = await cookies();
   const token = await  cookieStore.get('token')?.value || "";
-  const rawHeaders = await headers();
-  const requestHeaders = new Headers(Object.fromEntries(rawHeaders.entries()));
-
   let userId: string | null = null;
   let userName: string | null = null;
   let joinedGroups: Group[] = [];
@@ -72,12 +50,12 @@ export default async function HomePage() {
       userId = payload.userId as string;
 
       if (userId) {
-        const userDetails = await getUserDetails(userId, requestHeaders);
+        const userDetails = await getUserDetails(userId);
         if (userDetails) {
           userName = userDetails.name;
         }
-        const allGroups = await getGroups(requestHeaders);
-        const userGroups = await getUserGroups(userId, requestHeaders);
+        const allGroups = await getGroups();
+        const userGroups = await getUserGroups(userId);
         joinedGroups = userGroups;
         availableGroups = allGroups;
       }

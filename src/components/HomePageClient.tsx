@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -35,6 +35,14 @@ export default function HomePageClient({
     return initialAvailableGroups.filter(group => !joinedGroupIds.has(group.id));
   });
   const router = useRouter();
+
+  useEffect(() => {
+    setUserId(initialUserId);
+    setUserName(initialUserName);
+    setJoinedGroups(initialJoinedGroups);
+    const joinedGroupIds = new Set(initialJoinedGroups.map(group => group.id));
+    setAvailableGroups(initialAvailableGroups.filter(group => !joinedGroupIds.has(group.id)));
+  }, [initialUserId, initialUserName, initialJoinedGroups, initialAvailableGroups]);
   
   const handleLogout = async () => {
     try {

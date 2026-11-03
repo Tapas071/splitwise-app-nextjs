@@ -3,19 +3,29 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const { name } = await req.json();
+    const userId = req.headers.get('x-user-id');
 
-    if (!name ) {
+    if (typeof name !== 'string' || !name.trim()) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+    if (!userId) {
+      return NextResponse.json({ error: 'Authenticated user is required' }, { status: 401 });
+    }
+
     const newGroup = await prisma.group.create({
       data: {
-        name
+        name: name.trim(),
+        members: {
+          create: {
+            user: { connect: { id: userId } },
+          },
+        },
       },
     });
 
     return NextResponse.json({ group: newGroup }, { status: 201 });
   } catch (error) {
-    console.error('Signup error:', error);
+    console.error('Create group error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
