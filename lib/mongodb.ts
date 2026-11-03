@@ -1,6 +1,6 @@
 import { Db, MongoClient, ObjectId } from 'mongodb';
 
-const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/splitwise-app';
+const uri = process.env.DATABASE_URL || 'mongodb://127.0.0.1:27017/splitwise-app';
 
 let client: MongoClient | null = null;
 let db: Db | null = null;
