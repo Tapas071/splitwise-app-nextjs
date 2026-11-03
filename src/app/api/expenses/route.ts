@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '../../../../lib/prisma';
-
+import { getDb, serializeDoc, toObjectId } from '../../../../lib/mongodb';
 
 // GET /api/expenses - Get all expenses
 export async function GET() {
   try {
-    const expenses = await prisma.expense.findMany();
-    return NextResponse.json(expenses);
+    const db = await getDb();
+    const expenses = await db.collection('expenses').find({}).toArray();
+    return NextResponse.json(expenses.map((expense) => serializeDoc(expense)));
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -21,60 +21,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing or invalid required fields' }, { status: 400 });
     }
 
-    // Begin a transaction to ensure all operations succeed or fail together
-    const newExpense = await prisma.$transaction(async (prisma) => {
-      // Create the main expense record
-      const expense = await prisma.expense.create({
-        data: {
-          description,
-          amount,
-          paidById,
-          groupId,
-          // splitAmong will be connected below
-        },
-      });
+    const db = await getDb();
+    const groups = db.collection('groups');
+    const users = db.collection('users');
 
-      // Create the SplitUserGroup records for each split
-      await prisma.splitUserGroup.createMany({
-        data: splitAmong.map((split: { userId: string, amount: number }) => ({
-          expenseId: expense.id,
-          userId: split.userId,
-          amount: split.amount,
-        })),
-      });
+    const group = await groups.findOne({ _id: toObjectId(groupId) });
+    if (!group) {
+      return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+    }
 
-      // Return the newly created expense with its split details
-      const expenseWithSplits = await prisma.expense.findUnique({
-        where: { id: expense.id },
-        include: { splitAmong: true },
-      });
+    const paidByUser = await users.findOne({ _id: toObjectId(paidById) });
+    if (!paidByUser) {
+      return NextResponse.json({ error: 'Payer not found' }, { status: 404 });
+    }
 
-      return expenseWithSplits;
-    });
+    const totalSplitAmount = splitAmong.reduce((sum: number, member: { amount: number }) => sum + Number(member.amount), 0);
+    if (Math.abs(totalSplitAmount - amount) > 0.01) {
+      return NextResponse.json({ error: 'Split amounts do not add up to the total amount' }, { status: 400 });
+    }
 
-    return NextResponse.json(newExpense, { status: 201 });
+    const expenseDoc = {
+      description,
+      amount,
+      paidById,
+      groupId,
+      splitAmong: splitAmong.map((member: { userId: string; amount: number }) => ({
+        userId: member.userId,
+        amount: Number(member.amount),
+      })),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const result = await db.collection('expenses').insertOne(expenseDoc);
+    return NextResponse.json(serializeDoc({ _id: result.insertedId, ...expenseDoc }), { status: 201 });
   } catch (error) {
     console.error('Error creating expense:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-/**
- * Handles GET requests to fetch all Expenses.
- */
-// export async function GET() {
-//   try {
-//     const allExpenses = await prisma.expense.findMany({
-//       include: {
-//         paidBy: true,
-//         group: true,
-//         splitAmong: true,
-//       },
-//     });
-
-//     return NextResponse.json(allExpenses, { status: 200 });
-//   } catch (error) {
-//     console.error('Error fetching expenses:', error);
-//     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-//   }
-// }

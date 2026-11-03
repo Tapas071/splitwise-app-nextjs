@@ -10,7 +10,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { createExpense } from '@/app/action';
 import { useRouter } from 'next/navigation';
 
 interface Member {
@@ -104,7 +103,19 @@ export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExp
         splitAmong: splitAmongData,
       };
 
-      await createExpense(expenseData, token);
+      const response = await fetch('/api/expenses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(expenseData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Failed to create expense. Please try again.');
+      }
 
       // Reset form
       setDescription('');

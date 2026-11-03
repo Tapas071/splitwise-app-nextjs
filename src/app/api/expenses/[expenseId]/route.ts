@@ -1,101 +1,67 @@
 // import type { NextRequest } from 'next/server'
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '../../../../../lib/prisma';
+import { getDb, serializeDoc, toObjectId } from '../../../../../lib/mongodb';
 
 export async function GET(req: NextRequest, ctx: RouteContext<'/api/expenses/[expenseId]'>) {
   try {
-     const { expenseId } = await ctx.params
-
-    const expense = await prisma.expense.findUnique({
-      where: { id: expenseId }
-    });
+    const { expenseId } = await ctx.params;
+    const db = await getDb();
+    const expense = await db.collection('expenses').findOne({ _id: toObjectId(expenseId) });
 
     if (!expense) {
       return NextResponse.json({ error: 'Expense not found' }, { status: 404 });
     }
 
-    return NextResponse.json(expense, { status: 200 });
+    return NextResponse.json(serializeDoc(expense), { status: 200 });
   } catch (error) {
     console.error('Error fetching expense:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-/**
- * Handles PATCH requests to update an existing Expense by its ID.
- * Expects a JSON body with fields to update (e.g., description, amount).
- */
 export async function PATCH(req: NextRequest, ctx: RouteContext<'/api/expenses/[expenseId]'>) {
   try {
-    const { expenseId } = await ctx.params
+    const { expenseId } = await ctx.params;
     const { description, amount, paidById, groupId, splitAmong } = await req.json();
 
-    const updateData: any = {};
-    if (description) updateData.description = description;
+    const db = await getDb();
+    const updateData: Record<string, unknown> = {
+      updatedAt: new Date(),
+    };
+
+    if (description !== undefined) updateData.description = description;
     if (amount !== undefined) updateData.amount = amount;
-    if (paidById) updateData.paidById = paidById;
-    if (groupId) updateData.groupId = groupId;
+    if (paidById !== undefined) updateData.paidById = paidById;
+    if (groupId !== undefined) updateData.groupId = groupId;
+    if (splitAmong !== undefined) {
+      updateData.splitAmong = splitAmong.map((split: { userId: string; amount: number }) => ({
+        userId: split.userId,
+        amount: Number(split.amount),
+      }));
+    }
 
-    // Begin a transaction to ensure all operations succeed or fail together
-    const updatedExpense = await prisma.$transaction(async (prisma) => {
-      // First, update the main expense record
-      const expense = await prisma.expense.update({
-        where: { id: expenseId },
-        data: updateData,
-      });
+    const updatedExpense = await db.collection('expenses').findOneAndUpdate(
+      { _id: toObjectId(expenseId) },
+      { $set: updateData },
+      { returnDocument: 'after' }
+    );
 
-      // If splitAmong is provided, update the split details
-      if (splitAmong && Array.isArray(splitAmong)) {
-        // Delete all existing splits for this expense
-        await prisma.splitUserGroup.deleteMany({
-          where: { expenseId },
-        });
+    if (!updatedExpense || !updatedExpense.value) {
+      return NextResponse.json({ error: 'Expense not found' }, { status: 404 });
+    }
 
-        // Create the new SplitUserGroup records
-        await prisma.splitUserGroup.createMany({
-          data: splitAmong.map((split: { userId: string, amount: number }) => ({
-            expenseId: expense.id,
-            userId: split.userId,
-            amount: split.amount,
-          })),
-        });
-      }
-
-      // Return the updated expense with its new split details
-      const expenseWithSplits = await prisma.expense.findUnique({
-        where: { id: expense.id },
-        include: { splitAmong: true },
-      });
-
-      return expenseWithSplits;
-    });
-
-    return NextResponse.json(updatedExpense, { status: 200 });
+    return NextResponse.json(serializeDoc(updatedExpense.value), { status: 200 });
   } catch (error) {
     console.error('Error updating expense:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-/**
- * Handles DELETE requests to delete a single Expense by its ID.
- */
 export async function DELETE(req: NextRequest, ctx: RouteContext<'/api/expenses/[expenseId]'>) {
   try {
-   const { expenseId } = await ctx.params
-
-    // Begin a transaction to ensure both expense and its splits are deleted
-    await prisma.$transaction(async (prisma) => {
-      // Delete associated SplitUserGroup records first
-      await prisma.splitUserGroup.deleteMany({
-        where: { expenseId },
-      });
-
-      // Then delete the main Expense record
-      await prisma.expense.delete({
-        where: { id: expenseId },
-      });
-    });
+    const { expenseId } = await ctx.params;
+    const db = await getDb();
+    await db.collection('expenses').deleteOne({ _id: toObjectId(expenseId) });
 
     return NextResponse.json({ message: 'Expense and associated splits deleted successfully' }, { status: 200 });
   } catch (error) {

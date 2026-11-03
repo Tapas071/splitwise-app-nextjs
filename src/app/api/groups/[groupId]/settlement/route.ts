@@ -1,76 +1,63 @@
 import { NextRequest, NextResponse } from 'next/server';
-import prisma from '../../../../../../lib/prisma';
+import { getDb, serializeDoc, toObjectId } from '../../../../../../lib/mongodb';
 
 export async function GET(req: NextRequest, context: any) {
   const { groupId } = context.params;
 
   try {
-    const group = await prisma.group.findUnique({
-      where: { id: groupId },
-      include: {
-        members: {
-          include: {
-            user: true,
-          },
-        },
-        expenses: {
-          include: {
-            paidBy: true,
-            splitAmong: true,
-          },
-        },
-      },
-    });
+    const db = await getDb();
+    const group = await db.collection('groups').findOne({ _id: toObjectId(groupId) });
 
     if (!group) {
       return NextResponse.json({ error: 'Group not found' }, { status: 404 });
     }
 
-    let totalExpense = 0;
-    const balances: { [userId: string]: number } = {};
-    const memberNames: { [userId: string]: string } = {};
+    const members = await db.collection('userGroups').find({ groupId }).toArray();
+    const expenses = await db.collection('expenses').find({ groupId }).toArray();
+    const userIds = members.map((member) => member.userId);
+    const objectIds = userIds
+      .map((id) => toObjectId(id))
+      .filter((id): id is NonNullable<typeof id> => Boolean(id));
 
-    // Initialize balances and member names
-    group.members.forEach(member => {
-      balances[member.userId] = 0;
-      memberNames[member.userId] = member.user.name;
+    const users = await db.collection('users').find({ _id: { $in: objectIds } }).toArray();
+
+    const memberNames: Record<string, string> = {};
+    users.forEach((user) => {
+      memberNames[user._id.toString()] = user.name;
     });
 
-    // Calculate balances based on expenses
-    group.expenses.forEach(expense => {
-      totalExpense += expense.amount; // Accumulate total expense
-      // Paid by
-      balances[expense.paidById] += expense.amount;
+    let totalExpense = 0;
+    const balances: Record<string, number> = {};
 
-      // Split among
-      expense.splitAmong.forEach(split => {
-        balances[split.userId] -= split.amount;
+    members.forEach((member) => {
+      balances[member.userId] = 0;
+      memberNames[member.userId] = memberNames[member.userId] || 'Unknown User';
+    });
+
+    expenses.forEach((expense) => {
+      totalExpense += expense.amount;
+      balances[expense.paidById] = (balances[expense.paidById] || 0) + expense.amount;
+
+      (expense.splitAmong || []).forEach((split: { userId: string; amount: number }) => {
+        balances[split.userId] = (balances[split.userId] || 0) - split.amount;
       });
     });
 
-    // Separate debtors and creditors
     const debtors: { userId: string; amount: number }[] = [];
     const creditors: { userId: string; amount: number }[] = [];
 
-    for (const userId in balances) {
-      const balance = balances[userId];
-      if (balance < 0) {
-        debtors.push({ userId, amount: Math.abs(balance) }); // Owe money
-      } else if (balance > 0) {
-        creditors.push({ userId, amount: balance }); // Owed money
-      }
-    }
+    Object.entries(balances).forEach(([userId, balance]) => {
+      if (balance < 0) debtors.push({ userId, amount: Math.abs(balance) });
+      else if (balance > 0) creditors.push({ userId, amount: balance });
+    });
 
-    // Sort for optimal settlement (optional but good practice)
-    debtors.sort((a, b) => b.amount - a.amount); // Highest debt first
-    creditors.sort((a, b) => b.amount - a.amount); // Highest credit first
+    debtors.sort((a, b) => b.amount - a.amount);
+    creditors.sort((a, b) => b.amount - a.amount);
 
     const settlements: { from: string; to: string; amount: number }[] = [];
-
     while (debtors.length > 0 && creditors.length > 0) {
       const debtor = debtors[0];
       const creditor = creditors[0];
-
       const settlementAmount = Math.min(debtor.amount, creditor.amount);
 
       settlements.push({
@@ -82,34 +69,30 @@ export async function GET(req: NextRequest, context: any) {
       debtor.amount -= settlementAmount;
       creditor.amount -= settlementAmount;
 
-      if (debtor.amount === 0) {
-        debtors.shift();
-      }
-      if (creditor.amount === 0) {
-        creditors.shift();
-      }
+      if (debtor.amount === 0) debtors.shift();
+      if (creditor.amount === 0) creditors.shift();
     }
 
-    const formattedBalances = Object.keys(balances).map(userId => ({
+    const formattedBalances = Object.keys(balances).map((userId) => ({
       userId,
-      userName: memberNames[userId],
+      userName: memberNames[userId] || userId,
       balance: balances[userId],
     }));
 
-    const formattedSettlements = settlements.map(s => ({
-      fromUser: memberNames[s.from],
-      toUser: memberNames[s.to],
+    const formattedSettlements = settlements.map((s) => ({
+      fromUser: memberNames[s.from] || s.from,
+      toUser: memberNames[s.to] || s.to,
       amount: s.amount,
     }));
 
     return NextResponse.json({
-      totalExpense: totalExpense,
+      totalExpense,
       balances: formattedBalances,
       settlements: formattedSettlements,
     }, { status: 200 });
-
   } catch (error) {
     console.error('Error calculating settlement:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+

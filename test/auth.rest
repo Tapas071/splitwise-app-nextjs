@@ -4,9 +4,15 @@ POST http://localhost:3000/api/signup
 Content-Type: application/json
 
 {
-  "name": "tapas",
-  "email": "tapas@example.com",
-  "password": "password123"
+  "name": "ankit",
+  "email": "ankit@example.com",
+  "password": "password!2"
+}
+{
+  "name": "Rishi",
+  "name": "Rishi",
+  "email": "rishi@example.com",
+  "password": "password!2"
 }
 
 ### Login

@@ -5,7 +5,7 @@
 ### Create Group
 POST http://localhost:3000/api/groups
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2OGVhNTQ1N2IyOTJlOGNmNDM4ZjdjYjgiLCJleHAiOjE3NjAxOTEwODZ9.zxre13EAMkA8LLc9SlDo4pbLZsxDaluufRWnVrKPuRw
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2YTdlMDY0M2IwNTQ0MzVkNzViYmRmNjIiLCJleHAiOjE3ODY3MzA0MzV9.XCQBI8CoT4zURd2H7bIln5Op94R3Zt4f61Yq32qDHo0
 
 {
   "name": "My New Group3"

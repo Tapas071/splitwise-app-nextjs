@@ -8,24 +8,32 @@ import Link from 'next/link';
 
 // import { ThemeToggle } from '@/components/ThemeToggle';
 
-const GroupPage = async ({ params }: { params: { groupId: string } }) => {
+const GroupPage = async ({ params }: { params: Promise<{ groupId: string }> }) => {
   const { groupId } = await params;
-    const cookieStore = await cookies();
-    const token = await  cookieStore.get('token')?.value || "";
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value || "";
   
   const groupDataResponse = await getGroupData(groupId, token);
   const group: any = groupDataResponse;
 
-  const memberNames = group.expenses.reduce((acc: any, expense: any) => {
-    acc[expense.paidBy.id] = expense.paidBy.name;
+  const memberNames = (group.expenses || []).reduce((acc: any, expense: any) => {
+    const paidByName = expense?.paidBy?.name || expense?.paidById;
+    if (paidByName && expense?.paidBy?.id) {
+      acc[expense.paidBy.id] = expense.paidBy.name;
+    }
     return acc;
   }, {});
 
-  group.members.forEach((member: any) => {
-    if (member.user && member.user.name) {
+  (group.members || []).forEach((member: any) => {
+    if (member?.user?.name) {
       memberNames[member.userId] = member.user.name;
     }
   });
+
+  const formatAmount = (amount: number | undefined) => {
+    if (typeof amount !== 'number' || Number.isNaN(amount)) return '$0.00';
+    return `$${amount.toFixed(2)}`;
+  };
 
   return (
     <>
@@ -42,13 +50,13 @@ const GroupPage = async ({ params }: { params: { groupId: string } }) => {
               token={token}
             />
             <ul className="space-y-3">
-              {group.members.map((member: any) => (
+              {(group.members || []).map((member: any) => (
                 <li 
                   key={member.id} 
                   className="flex justify-between items-center bg-muted p-3 rounded-md border border-border hover:bg-accent transition-colors"
                 >
                   <span className="font-medium text-muted-foreground">
-                    {member.user.name}
+                    {member?.user?.name || member?.userId || 'Unknown member'}
                   </span>
                 </li>
               ))}
@@ -61,7 +69,7 @@ const GroupPage = async ({ params }: { params: { groupId: string } }) => {
             <h2 className="text-2xl font-semibold mb-4 text-card-foreground">Expenses</h2>
             <div className="m-y-5">
                 <AddExpenseModal 
-              members={group.members} 
+              members={group.members || []} 
               groupId={groupId}
               memberNames={memberNames}
               token={token}
@@ -69,33 +77,33 @@ const GroupPage = async ({ params }: { params: { groupId: string } }) => {
             </div>
            
             <ul className="space-y-4">
-              {group.expenses.reverse().map((expense: any) => (
+              {((group.expenses || []).slice().reverse()).map((expense: any) => (
                 <li 
                   key={expense.id} 
                   className="bg-muted p-4 rounded-lg border border-border hover:border-ring transition-colors"
                 >
                   <div className="flex justify-between items-center mb-2">
                     <span className="font-semibold text-lg text-foreground">
-                      {expense.description}
+                      {expense.description || 'Unnamed expense'}
                     </span>
                     <span className="text-xl font-bold text-chart-1">
-                      ${expense.amount.toFixed(2)}
+                      {formatAmount(expense.amount)}
                     </span>
                   </div>
                   <div className="text-sm text-muted-foreground mb-3">
-                    Paid by <span className="font-medium text-foreground">{expense.paidBy.name}</span>
+                    Paid by <span className="font-medium text-foreground">{expense?.paidBy?.name || expense?.paidById || 'Unknown payer'}</span>
                   </div>
                   <div>
                     <h4 className="text-sm font-semibold mb-2 text-foreground">Split Among:</h4>
                     <ul className="space-y-1 pl-2">
-                      {expense.splitAmong.map((split: any) => (
+                      {(expense.splitAmong || []).map((split: any) => (
                         <li 
-                          key={split.id} 
+                          key={split.id || `${expense.id}-${split.userId}`} 
                           className="text-sm text-muted-foreground flex justify-between items-center py-1"
                         >
-                          <span>{memberNames[split.userId] || `User ID: ${split.userId}`}</span>
+                          <span>{memberNames[split.userId] || split?.user?.name || `User ID: ${split.userId || 'unknown'}`}</span>
                           <span className="font-mono font-medium text-foreground">
-                            ${split.amount.toFixed(2)}
+                            {formatAmount(split.amount)}
                           </span>
                         </li>
                       ))}

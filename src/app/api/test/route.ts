@@ -1,27 +1,35 @@
 `use server`
 
-import prisma from '../../../../lib/prisma';
+import { getDb, serializeDoc } from '../../../../lib/mongodb';
 
 export const dynamic = 'force-static'
  
 export async function GET() {
-  const data = await prisma.user.findMany();
- 
-  return Response.json({ data })
+  const db = await getDb();
+  const data = await db.collection('users').find({}).toArray();
+  return Response.json({ data: data.map((user) => serializeDoc(user)) })
 }
 
 export async function POST() {
-//   const data = await prisma.user2.findMany();
-const name = Math.random().toString(36).substring(7);
-const email = name + "@example.com";
-  const newUser = await prisma.user.create({
-      data: {
-        name: name as string,
-        email: email as string,
-        password: "password" as string,
-        
-      },
-    });
- 
-  return Response.json({ newUser })
+  const db = await getDb();
+  const name = Math.random().toString(36).substring(7);
+  const email = name + "@example.com";
+  const result = await db.collection('users').insertOne({
+    name,
+    email,
+    password: 'password',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  return Response.json({
+    newUser: serializeDoc({
+      _id: result.insertedId,
+      name,
+      email,
+      password: 'password',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }),
+  })
 }

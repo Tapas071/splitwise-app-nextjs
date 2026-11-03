@@ -1,17 +1,20 @@
 `use server`
-import prisma from '../../lib/prisma';
 import axios from 'axios';
 
 export async function getUser() {
-  const users = await prisma.user.findMany();
-  return new Response(JSON.stringify(users));
+  const { getDb, serializeDoc } = await import('../../lib/mongodb');
+  const db = await getDb();
+  const users = await db.collection('users').find({}).toArray();
+  return new Response(JSON.stringify(users.map((user) => serializeDoc(user))));
 }
+
 export async function getGroupWithId(groupId: string) {
-  const group = await prisma.group.findUnique({
-    where: { id: groupId },
-  });
-  return new Response(JSON.stringify(group));
+  const { getDb, serializeDoc, toObjectId } = await import('../../lib/mongodb');
+  const db = await getDb();
+  const group = await db.collection('groups').findOne({ _id: toObjectId(groupId) });
+  return new Response(JSON.stringify(serializeDoc(group)));
 }
+
 export async function makeGetRequest(url:string){
   const fullUrl = process.env.BASE_URL + url
   console.log('fullUrl', fullUrl)
@@ -27,19 +30,14 @@ export const getGroupData = async (id: string, token: string): Promise<Group> =>
   const baseURL = "http://localhost:3000";
 
   try {
-    // We use axios.get() and specify the Authorization header as required by your middleware.
-    // We also use TypeScript generics to specify the expected type of the response data.
     const response = await axios.get<Group>(`${baseURL}/api/groups/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
 
-    // Axios wraps the actual data in the 'data' property of its response object.
     return response.data;
-    
   } catch (error) {
-    // Log error and throw it so the calling function can handle UI feedback
     console.error(`Failed to fetch group ${id}:`, error);
     throw new Error('Could not retrieve group data.');
   }

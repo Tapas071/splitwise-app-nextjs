@@ -11,7 +11,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
-import { addMember } from '@/app/action';
 
 interface AddMemberModalProps {
   groupId: string;
@@ -74,7 +73,19 @@ export const AddMemberModal = ({ groupId, token }: AddMemberModalProps) => {
     setError(null);
 
     try {
-      await addMember(groupId, selectedUser.id, token);
+      const response = await fetch(`/api/groups/${groupId}/member`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId: selectedUser.id }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Failed to add member. Please try again.');
+      }
 
       // Reset form
       setSearchQuery('');
