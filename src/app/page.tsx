@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import HomePageClient from '@/components/HomePageClient';
+import { getDb, toObjectId } from '../../lib/mongodb';
 import prisma from '../../lib/prisma';
 
 interface Group {
@@ -15,17 +16,27 @@ interface User {
 }
 
 async function getGroups(): Promise<Group[]> {
-  return prisma.group.findMany({
-    select: { id: true, name: true },
-  });
+  const db = await getDb();
+  const groups = await db.collection('groups').find({}).toArray();
+
+  return groups.map((group) => ({
+    id: group._id.toString(),
+    name: String(group.name),
+  }));
 }
 
 async function getUserGroups(userId: string): Promise<Group[]> {
-  const memberships = await prisma.userGroup.findMany({
-    where: { userId },
-    select: { group: { select: { id: true, name: true } } },
-  });
-  return memberships.map(({ group }) => group);
+  const db = await getDb();
+  const memberships = await db.collection('userGroups').find({ userId }).toArray();
+  const groupIds = memberships
+    .map((membership) => toObjectId(String(membership.groupId)))
+    .filter((id): id is NonNullable<typeof id> => Boolean(id));
+  const groups = await db.collection('groups').find({ _id: { $in: groupIds } }).toArray();
+
+  return groups.map((group) => ({
+    id: group._id.toString(),
+    name: String(group.name),
+  }));
 }
 
 async function getUserDetails(userId: string): Promise<User | null> {

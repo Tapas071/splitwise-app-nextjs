@@ -8,12 +8,7 @@ Content-Type: application/json
   "email": "ankit@example.com",
   "password": "password!2"
 }
-{
-  "name": "Rishi",
-  "name": "Rishi",
-  "email": "rishi@example.com",
-  "password": "password!2"
-}
+
 
 ### Login
 

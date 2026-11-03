@@ -6,20 +6,30 @@ export async function POST(req: NextRequest) {
     const { name } = await req.json();
     const userId = req.headers.get('x-user-id');
 
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     if (typeof name !== 'string' || !name.trim()) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     const db = await getDb();
     const result = await db.collection('groups').insertOne({
-      name,
+      name: name.trim(),
       createdAt: new Date(),
       updatedAt: new Date(),
     });
 
+    await db.collection('userGroups').insertOne({
+      userId,
+      groupId: result.insertedId.toString(),
+      createdAt: new Date(),
+    });
+
     const newGroup = serializeDoc({
       _id: result.insertedId,
-      name,
+      name: name.trim(),
       createdAt: new Date(),
       updatedAt: new Date(),
     });
