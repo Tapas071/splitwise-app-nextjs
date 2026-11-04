@@ -7,6 +7,7 @@ import prisma from '../../lib/prisma';
 interface Group {
   id: string;
   name: string;
+  currency: string;
 }
 
 interface User {
@@ -22,6 +23,7 @@ async function getGroups(): Promise<Group[]> {
   return groups.map((group) => ({
     id: group._id.toString(),
     name: String(group.name),
+    currency: String(group.currency || 'INR'),
   }));
 }
 
@@ -36,6 +38,7 @@ async function getUserGroups(userId: string): Promise<Group[]> {
   return groups.map((group) => ({
     id: group._id.toString(),
     name: String(group.name),
+    currency: String(group.currency || 'INR'),
   }));
 }
 

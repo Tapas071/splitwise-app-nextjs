@@ -60,7 +60,7 @@ export const CreateGroupModal = ({ token }: CreateGroupModalProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full">Create New Group</Button>
+        <Button className="w-full rounded-xl">Create New Group</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-popover border-border">
         <DialogHeader>
@@ -71,7 +71,7 @@ export const CreateGroupModal = ({ token }: CreateGroupModalProps) => {
         </DialogHeader>
 
         {error && (
-          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md text-sm">
+          <div className="rounded-xl border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
@@ -88,7 +88,7 @@ export const CreateGroupModal = ({ token }: CreateGroupModalProps) => {
               onChange={(e) => setGroupName(e.target.value)}
               required
               disabled={isLoading}
-              className="w-full px-3 py-2 bg-background text-foreground border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="field-control disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="e.g., Family Trip, Office Lunch"
               maxLength={50}
             />

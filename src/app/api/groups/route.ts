@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
     const db = await getDb();
     const result = await db.collection('groups').insertOne({
       name: name.trim(),
+      currency: 'INR',
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest) {
     const newGroup = serializeDoc({
       _id: result.insertedId,
       name: name.trim(),
+      currency: 'INR',
       createdAt: new Date(),
       updatedAt: new Date(),
     });

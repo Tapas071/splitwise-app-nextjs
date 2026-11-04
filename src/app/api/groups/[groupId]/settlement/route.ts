@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb, serializeDoc, toObjectId } from '../../../../../../lib/mongodb';
+import { getDb, toObjectId } from '../../../../../../lib/mongodb';
 
-export async function GET(req: NextRequest, context: any) {
-  const { groupId } = context.params;
-
+export async function GET(req: NextRequest, ctx: RouteContext<'/api/groups/[groupId]/settlement'>) {
   try {
+    const { groupId } = await ctx.params;
     const db = await getDb();
     const group = await db.collection('groups').findOne({ _id: toObjectId(groupId) });
 
@@ -87,6 +86,7 @@ export async function GET(req: NextRequest, context: any) {
 
     return NextResponse.json({
       totalExpense,
+      currency: group.currency || 'INR',
       balances: formattedBalances,
       settlements: formattedSettlements,
     }, { status: 200 });

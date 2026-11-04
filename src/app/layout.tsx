@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Link from "next/link";
+import { cookies } from "next/headers";
+import { jwtVerify } from "jose";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ModeToggle } from "@/components/mode-toggle";
+import { SiteHeader } from "@/components/SiteHeader";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -12,11 +13,24 @@ export const metadata: Metadata = {
   description: "Manage and split expenses with ease",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const token = (await cookies()).get("token")?.value;
+  let isAuthenticated = false;
+
+  if (token) {
+    try {
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET || "your-secret-key");
+      await jwtVerify(token, secret);
+      isAuthenticated = true;
+    } catch {
+      isAuthenticated = false;
+    }
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
@@ -26,19 +40,8 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <header className="border-b ">
-            <div className="container flex h-16 items-center justify-between">
-              <div className="flex items-center gap-6">
-                <Link href="/" className="font-bold">Home</Link>
-                <nav className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <Link href="/login" className="hover:text-primary">Login</Link>
-                  <Link href="/signup" className="hover:text-primary">Sign Up</Link>
-                </nav>
-              </div>
-              <ModeToggle />
-            </div>
-          </header>
-          <main>{children}</main>
+          <SiteHeader isAuthenticated={isAuthenticated} />
+          <main className="min-h-[calc(100vh-4.5rem)]">{children}</main>
         </ThemeProvider>
       </body>
     </html>

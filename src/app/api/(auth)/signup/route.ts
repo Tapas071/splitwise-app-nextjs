@@ -37,7 +37,6 @@ export async function POST(req: NextRequest) {
       _id: result.insertedId,
       name,
       email,
-      password: hashedPassword,
       createdAt: new Date(),
       updatedAt: new Date(),
     });

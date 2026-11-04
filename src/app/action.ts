@@ -24,6 +24,7 @@ export async function makeGetRequest(url:string){
 interface Group {
   id: string;
   name: string;
+  currency?: string;
   // You might need to add other fields like members, expenses, etc.
 }
 export const getGroupData = async (id: string, token: string): Promise<Group> => {

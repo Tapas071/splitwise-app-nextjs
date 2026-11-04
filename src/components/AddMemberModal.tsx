@@ -106,7 +106,7 @@ export const AddMemberModal = ({ groupId, token }: AddMemberModalProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="mt-6 w-full">Add Member</Button>
+        <Button className="w-full rounded-xl">Add Member</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px] bg-popover border-border">
         <DialogHeader>
@@ -117,7 +117,7 @@ export const AddMemberModal = ({ groupId, token }: AddMemberModalProps) => {
         </DialogHeader>
 
         {error && (
-          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md text-sm">
+          <div className="rounded-xl border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
@@ -136,18 +136,18 @@ export const AddMemberModal = ({ groupId, token }: AddMemberModalProps) => {
                 setSelectedUser(null); // Clear selected user on new search
               }}
               disabled={isLoading}
-              className="w-full px-3 py-2 bg-background text-foreground border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="field-control disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="Enter user name"
             />
             {isSearching && searchQuery.length > 2 && (
               <p className="text-sm text-muted-foreground mt-2">Searching...</p>
             )}
             {searchResults.length > 0 && !selectedUser && (
-              <ul className="mt-2 border border-input rounded-md max-h-40 overflow-y-auto bg-muted">
+              <ul className="mt-2 max-h-40 overflow-y-auto rounded-xl border border-input bg-muted p-1">
                 {searchResults.map((user) => (
                   <li
                     key={user.id}
-                    className="p-2 cursor-pointer hover:bg-accent transition-colors text-foreground"
+                    className="cursor-pointer rounded-lg p-2.5 text-foreground transition-colors hover:bg-accent"
                     onClick={() => {
                       setSelectedUser(user);
                       setSearchQuery(user.name); // Display selected user's name in search box

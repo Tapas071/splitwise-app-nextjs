@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
+import { formatCurrency } from '@/lib/currencies';
 
 interface Member {
   id: string;
@@ -22,6 +23,7 @@ interface AddExpenseModalProps {
   groupId: string;
   memberNames: { [key: string]: string };
   token: string;
+  currency?: string;
 }
 
 interface CustomSplit {
@@ -29,7 +31,7 @@ interface CustomSplit {
   amount: string;
 }
 
-export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExpenseModalProps) => {
+export const AddExpenseModal = ({ members, groupId, memberNames, token, currency = 'INR' }: AddExpenseModalProps) => {
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
@@ -152,7 +154,7 @@ export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExp
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="mt-6 w-full">Add Expense</Button>
+        <Button className="w-full rounded-xl">Add Expense</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px] bg-popover border-border max-h-[80vh] overflow-y-auto">
         <DialogHeader>
@@ -163,7 +165,7 @@ export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExp
         </DialogHeader>
 
         {error && (
-          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-md text-sm">
+          <div className="rounded-xl border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
@@ -180,14 +182,14 @@ export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExp
               onChange={(e) => setDescription(e.target.value)}
               required
               disabled={isLoading}
-              className="w-full px-3 py-2 bg-background text-foreground border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="field-control disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="e.g., Dinner at restaurant"
             />
           </div>
 
           <div>
             <label htmlFor="amount" className="block text-sm font-medium mb-2 text-foreground">
-              Amount ($)
+              Amount ({currency})
             </label>
             <input
               id="amount"
@@ -198,7 +200,7 @@ export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExp
               onChange={(e) => setAmount(e.target.value)}
               required
               disabled={isLoading}
-              className="w-full px-3 py-2 bg-background text-foreground border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="field-control disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="0.00"
             />
           </div>
@@ -213,7 +215,7 @@ export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExp
               onChange={(e) => setPaidBy(e.target.value)}
               required
               disabled={isLoading}
-              className="w-full px-3 py-2 bg-background text-foreground border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="field-control disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="">Select member</option>
               {members.map((member) => (
@@ -225,14 +227,14 @@ export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExp
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2 text-foreground">
+            <p id="splitAmongLabel" className="mb-2 block text-sm font-medium text-foreground">
               Split Among
-            </label>
-            <div className="space-y-2 max-h-60 overflow-y-auto border border-input rounded-md p-3 bg-muted">
+            </p>
+            <div aria-labelledby="splitAmongLabel" className="max-h-60 space-y-2 overflow-y-auto rounded-xl border border-input bg-muted/70 p-3">
               {members.map((member) => (
                 <label
                   key={member.id}
-                  className={`flex items-center space-x-2 cursor-pointer hover:bg-accent p-2 rounded transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`flex cursor-pointer items-center space-x-2 rounded-lg p-2.5 transition-colors hover:bg-accent ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
                 >
                   <input
                     type="checkbox"
@@ -275,7 +277,7 @@ export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExp
 
               {splitType === 'equal' && (selectedMembers.length > 0) && ( // Only show if members are selected
                 <p className="text-sm text-muted-foreground mt-2">
-                  Each person will pay: <span className="font-medium text-chart-1">${amount ? (parseFloat(amount) / selectedMembers.length).toFixed(2) : '0.00'}</span>
+                  Each person will pay: <span className="font-medium text-chart-1">{formatCurrency(amount ? parseFloat(amount) / selectedMembers.length : 0, currency)}</span>
                 </p>
               )}
 
@@ -293,13 +295,13 @@ export const AddExpenseModal = ({ members, groupId, memberNames, token }: AddExp
                         value={split.amount}
                         onChange={(e) => handleCustomSplitChange(split.userId, e.target.value)}
                         disabled={isLoading}
-                        className="w-1/2 px-3 py-2 bg-background text-foreground border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="field-control w-1/2 disabled:cursor-not-allowed disabled:opacity-50"
                         placeholder="0.00"
                       />
                     </div>
                   ))}
                   <p className={`text-sm mt-2 ${remainingAmount < 0 || remainingAmount > 0.01 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                    Remaining to split: <span className="font-medium">${remainingAmount.toFixed(2)}</span>
+                    Remaining to split: <span className="font-medium">{formatCurrency(remainingAmount, currency)}</span>
                   </p>
                 </div>
               )}

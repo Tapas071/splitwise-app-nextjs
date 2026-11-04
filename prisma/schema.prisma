@@ -28,8 +28,9 @@ model User {
 }
 
 model Group {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String      @id @default(auto()) @map("_id") @db.ObjectId
   name      String
+  currency  String      @default("INR")
   members   UserGroup[]
   expenses  Expense[]
 }

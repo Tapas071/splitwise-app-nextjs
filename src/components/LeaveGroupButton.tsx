@@ -27,5 +27,5 @@ export function LeaveGroupButton({ groupId, userId, token }: LeaveGroupButtonPro
     }
   };
 
-  return <Button onClick={handleLeaveGroup} variant="destructive">Leave Group</Button>;
+  return <Button onClick={handleLeaveGroup} variant="outline" size="sm" className="rounded-lg border-destructive/20 px-2.5 text-xs text-destructive hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive">Leave</Button>;
 }

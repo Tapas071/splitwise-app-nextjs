@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
-import { getDb, serializeDoc } from '../../../../../lib/mongodb';
+import { getDb } from '../../../../../lib/mongodb';
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,7 +33,11 @@ export async function POST(req: NextRequest) {
 
     const response = NextResponse.json({
       message: 'Login successful',
-      user: serializeDoc(user),
+      user: {
+        id: user._id.toString(),
+        name: user.name,
+        email: user.email,
+      },
     });
     response.cookies.set('token', token, { httpOnly: true, path: '/' });
 
