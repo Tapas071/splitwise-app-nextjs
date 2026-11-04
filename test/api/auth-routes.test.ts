@@ -22,7 +22,7 @@ jest.mock('jose', () => ({
 }));
 
 const mockedGetDb = getDb as jest.MockedFunction<typeof getDb>;
-const mockedCompare = compare as jest.MockedFunction<typeof compare>;
+const mockedCompare = compare as jest.Mock;
 const mockedHash = hash as jest.MockedFunction<typeof hash>;
 const accountId = new ObjectId('64a000000000000000000030');
 
@@ -109,6 +109,6 @@ describe('authentication routes', () => {
     const response = await logout();
     expect(response.status).toBe(200);
     expect(response.cookies.get('token')?.value).toBe('');
-    expect(response.cookies.get('token')?.expires?.getTime()).toBe(0);
+    expect(new Date(response.cookies.get('token')?.expires ?? 1).getTime()).toBe(0);
   });
 });
