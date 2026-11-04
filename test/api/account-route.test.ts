@@ -13,7 +13,7 @@ jest.mock('../../lib/mongodb', () => {
 jest.mock('bcryptjs', () => ({ compare: jest.fn(), hash: jest.fn() }));
 
 const mockedGetDb = getDb as jest.MockedFunction<typeof getDb>;
-const mockedCompare = compare as jest.MockedFunction<typeof compare>;
+const mockedCompare = compare as jest.Mock;
 const mockedHash = hash as jest.MockedFunction<typeof hash>;
 const userId = '64a000000000000000000040';
 const userObjectId = new ObjectId(userId);
