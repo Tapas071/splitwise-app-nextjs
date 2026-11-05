@@ -31,6 +31,8 @@ model Group {
   id        String      @id @default(auto()) @map("_id") @db.ObjectId
   name      String
   currency  String      @default("INR")
+  visibility String     @default("private")
+  createdBy String?     @db.ObjectId
   members   UserGroup[]
   expenses  Expense[]
 }
@@ -41,6 +43,7 @@ model UserGroup {
   userId  String @db.ObjectId
   group   Group  @relation(fields: [groupId], references: [id])
   groupId String @db.ObjectId
+  role    String @default("member")
 }
 
 model Expense {

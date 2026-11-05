@@ -1,6 +1,7 @@
 // import type { NextRequest } from 'next/server'
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, serializeDoc, toObjectId } from '../../../../../lib/mongodb';
+import { isGroupAdmin } from '../../../../../lib/group-access';
 
 export async function PUT(req: NextRequest, ctx: RouteContext<'/api/groups/[groupId]'>) {
   const { groupId } = await ctx.params;
@@ -52,6 +53,8 @@ export async function DELETE(req: NextRequest, ctx: RouteContext<'/api/groups/[g
 export async function GET(req: NextRequest, ctx: RouteContext<'/api/groups/[groupId]'>) {
   try {
     const { groupId } = await ctx.params;
+    const userId = req.headers.get('x-user-id');
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const db = await getDb();
 
     const group = await db.collection('groups').findOne({ _id: toObjectId(groupId) });
@@ -61,6 +64,13 @@ export async function GET(req: NextRequest, ctx: RouteContext<'/api/groups/[grou
     }
 
     const members = await db.collection('userGroups').find({ groupId }).toArray();
+    const membership = members.find((member) => String(member.userId) === userId);
+    if (group.visibility !== 'public' && !membership) {
+      return NextResponse.json({ error: 'This private group is available to members only.' }, { status: 403 });
+    }
+    const currentUserRole = membership
+      ? ((await isGroupAdmin(db, groupId, userId)) ? 'admin' : 'member')
+      : null;
     const expenses = await db.collection('expenses').find({ groupId }).toArray();
 
     const userIds = Array.from(
@@ -82,15 +92,16 @@ export async function GET(req: NextRequest, ctx: RouteContext<'/api/groups/[grou
       .filter((id): id is NonNullable<typeof id> => !!id);
 
     const users = validUserObjectIds.length
-      ? await db.collection('users').find({ _id: { $in: validUserObjectIds } }).toArray()
+      ? await db.collection('users').find({ _id: { $in: validUserObjectIds } }, { projection: { name: 1, email: 1 } }).toArray()
       : [];
 
     const userMap = new Map(users.map((user) => [String(user._id), serializeDoc(user)]));
 
-    const hydratedMembers = members.map((member) => ({
+    const hydratedMembers = await Promise.all(members.map(async (member) => ({
       ...serializeDoc(member),
+      role: (await isGroupAdmin(db, groupId, String(member.userId))) ? 'admin' : 'member',
       user: userMap.get(String(member.userId)) ?? null,
-    }));
+    })));
 
     const hydratedExpenses = expenses.map((expense) => ({
       ...serializeDoc(expense),
@@ -103,8 +114,20 @@ export async function GET(req: NextRequest, ctx: RouteContext<'/api/groups/[grou
         : [],
     }));
 
+      if (!membership) {
+        return NextResponse.json({
+          ...serializeDoc(group),
+          visibility: group.visibility || 'private',
+          currentUserRole: null,
+          members: [],
+          expenses: [],
+        }, { status: 200 });
+      }
+
     return NextResponse.json({
       ...serializeDoc(group),
+      visibility: group.visibility || 'private',
+      currentUserRole,
       members: hydratedMembers,
       expenses: hydratedExpenses,
     }, { status: 200 });

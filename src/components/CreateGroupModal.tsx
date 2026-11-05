@@ -19,6 +19,7 @@ interface CreateGroupModalProps {
 export const CreateGroupModal = ({ token }: CreateGroupModalProps) => {
   const [open, setOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
+  const [visibility, setVisibility] = useState<'public' | 'private'>('private');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -35,7 +36,7 @@ export const CreateGroupModal = ({ token }: CreateGroupModalProps) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ name: groupName }),
+        body: JSON.stringify({ name: groupName, visibility }),
       });
 
       if (!response.ok) {
@@ -45,6 +46,7 @@ export const CreateGroupModal = ({ token }: CreateGroupModalProps) => {
 
       // Reset form and close modal
       setGroupName('');
+      setVisibility('private');
       setOpen(false);
 
       // Refresh the page to show new group
@@ -93,6 +95,20 @@ export const CreateGroupModal = ({ token }: CreateGroupModalProps) => {
               maxLength={50}
             />
           </div>
+
+          <label htmlFor="groupVisibility" className="block text-sm font-medium text-foreground">
+            Group visibility
+            <select
+              id="groupVisibility"
+              value={visibility}
+              onChange={(event) => setVisibility(event.target.value as 'public' | 'private')}
+              disabled={isLoading}
+              className="field-control mt-2"
+            >
+              <option value="private">Private — invitation only</option>
+              <option value="public">Public — members can request to join</option>
+            </select>
+          </label>
 
           <div className="flex justify-end gap-3 pt-4">
             <Button

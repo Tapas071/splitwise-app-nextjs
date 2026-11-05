@@ -157,6 +157,15 @@
   box-shadow: 0 18px 48px -36px oklch(0.22 0.045 158 / 45%);
 }
 
+.group-activity-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.group-activity-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .eyebrow {
   color: var(--primary);
   font-size: 0.72rem;

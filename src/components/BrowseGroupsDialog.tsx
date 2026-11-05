@@ -23,6 +23,8 @@ export function BrowseGroupsDialog({ groups, userId }: BrowseGroupsDialogProps) 
   const [query, setQuery] = useState('');
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [sentGroupIds, setSentGroupIds] = useState<Set<string>>(new Set());
 
   const filteredGroups = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase();
@@ -33,18 +35,19 @@ export function BrowseGroupsDialog({ groups, userId }: BrowseGroupsDialogProps) 
   const handleJoin = async (groupId: string) => {
     setJoiningId(groupId);
     setError('');
+    setNotice('');
     try {
       const response = await fetch(`/api/groups/${groupId}/member`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId }),
+        body: JSON.stringify({ action: 'join' }),
       });
       if (!response.ok) {
         const data = await response.json().catch(() => null);
         throw new Error(data?.error || 'Could not join this group. Please try again.');
       }
-      setOpen(false);
-      setQuery('');
+      setSentGroupIds((current) => new Set(current).add(groupId));
+      setNotice('Your join request was sent to the group admins.');
       router.refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not join this group. Please try again.');
@@ -67,8 +70,9 @@ export function BrowseGroupsDialog({ groups, userId }: BrowseGroupsDialogProps) 
       <DialogContent className="flex max-h-[85dvh] flex-col overflow-hidden rounded-2xl border-border bg-popover p-4 sm:max-w-lg sm:p-6">
         <DialogHeader className="shrink-0 pr-7">
           <DialogTitle className="flex items-center gap-2 text-xl"><UsersRound className="size-5 text-primary" /> Find a group</DialogTitle>
-          <DialogDescription>Search available groups and join the ones you belong to.</DialogDescription>
+          <DialogDescription>Search public groups and request to join.</DialogDescription>
         </DialogHeader>
+        {notice && <p role="status" className="rounded-xl bg-primary/10 px-3 py-2 text-sm text-primary">{notice}</p>}
 
         <label className="relative mt-2 block shrink-0">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -98,11 +102,11 @@ export function BrowseGroupsDialog({ groups, userId }: BrowseGroupsDialogProps) 
                     <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground"><UsersRound className="size-5" /></span>
                     <div className="min-w-0">
                       <p className="truncate font-medium">{group.name}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">Currency · {group.currency || 'INR'}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">Public · Currency {group.currency || 'INR'}</p>
                     </div>
                   </div>
-                  <Button onClick={() => handleJoin(group.id)} disabled={joiningId !== null} size="sm" className="shrink-0 rounded-xl">
-                    {joiningId === group.id ? 'Joining…' : <>Join <ArrowRight className="size-3.5" /></>}
+                  <Button onClick={() => handleJoin(group.id)} disabled={joiningId !== null || sentGroupIds.has(group.id)} size="sm" className="shrink-0 rounded-xl">
+                    {joiningId === group.id ? 'Sending…' : sentGroupIds.has(group.id) ? 'Requested' : <>Request <ArrowRight className="size-3.5" /></>}
                   </Button>
                 </li>
               ))}

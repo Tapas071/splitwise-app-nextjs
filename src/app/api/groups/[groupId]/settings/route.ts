@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, serializeDoc, toObjectId } from '../../../../../../lib/mongodb';
 import { CURRENCIES } from '@/lib/currencies';
+import { isGroupAdmin } from '../../../../../../lib/group-access';
 
 export async function PATCH(req: NextRequest, ctx: RouteContext<'/api/groups/[groupId]/settings'>) {
   const userId = req.headers.get('x-user-id');
@@ -8,7 +9,7 @@ export async function PATCH(req: NextRequest, ctx: RouteContext<'/api/groups/[gr
 
   try {
     const { groupId } = await ctx.params;
-    const { name, currency } = await req.json();
+    const { name, currency, visibility } = await req.json();
     const normalizedName = typeof name === 'string' ? name.trim() : '';
 
     if (!normalizedName || normalizedName.length > 80) {
@@ -17,17 +18,22 @@ export async function PATCH(req: NextRequest, ctx: RouteContext<'/api/groups/[gr
     if (!CURRENCIES.some((option) => option.code === currency)) {
       return NextResponse.json({ error: 'Choose a supported currency.' }, { status: 400 });
     }
+    if (visibility !== undefined && visibility !== 'public' && visibility !== 'private') {
+      return NextResponse.json({ error: 'Visibility must be public or private.' }, { status: 400 });
+    }
 
     const db = await getDb();
     const groupObjectId = toObjectId(groupId);
     if (!groupObjectId) return NextResponse.json({ error: 'Invalid group' }, { status: 400 });
 
-    const membership = await db.collection('userGroups').findOne({ userId, groupId });
-    if (!membership) return NextResponse.json({ error: 'Only group members can change group settings.' }, { status: 403 });
+    if (!(await isGroupAdmin(db, groupId, userId))) {
+      return NextResponse.json({ error: 'Only group admins can change group settings.' }, { status: 403 });
+    }
 
+    const updates = { name: normalizedName, currency, ...(visibility ? { visibility } : {}), updatedAt: new Date() };
     const result = await db.collection('groups').updateOne(
       { _id: groupObjectId },
-      { $set: { name: normalizedName, currency, updatedAt: new Date() } }
+      { $set: updates }
     );
     if (!result.matchedCount) return NextResponse.json({ error: 'Group not found.' }, { status: 404 });
 

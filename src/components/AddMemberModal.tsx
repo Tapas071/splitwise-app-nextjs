@@ -25,6 +25,7 @@ interface UserSearchResult {
 export const AddMemberModal = ({ groupId, token }: AddMemberModalProps) => {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [message, setMessage] = useState('');
   const [searchResults, setSearchResults] = useState<UserSearchResult[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserSearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -79,18 +80,19 @@ export const AddMemberModal = ({ groupId, token }: AddMemberModalProps) => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ userId: selectedUser.id }),
+        body: JSON.stringify({ action: 'invite', userId: selectedUser.id, message }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || 'Failed to add member. Please try again.');
+        throw new Error(errorData?.error || 'Failed to send invitation. Please try again.');
       }
 
       // Reset form
       setSearchQuery('');
       setSearchResults([]);
       setSelectedUser(null);
+      setMessage('');
       setOpen(false);
 
       // Refresh the page to show new member immediately
@@ -108,11 +110,11 @@ export const AddMemberModal = ({ groupId, token }: AddMemberModalProps) => {
       <DialogTrigger asChild>
         <Button className="w-full rounded-xl">Add Member</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] bg-popover border-border">
+      <DialogContent className="max-h-[85dvh] overflow-y-auto bg-popover border-border sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-popover-foreground">Add New Member</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Search for a user by name to add to this group.
+            Search for a user and send them an invitation message. They will join after accepting.
           </DialogDescription>
         </DialogHeader>
 
@@ -165,6 +167,19 @@ export const AddMemberModal = ({ groupId, token }: AddMemberModalProps) => {
               </p>
             )}
           </div>
+
+          <label htmlFor="invitationMessage" className="block text-sm font-medium text-foreground">
+            Invitation message (optional)
+            <textarea
+              id="invitationMessage"
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              maxLength={500}
+              disabled={isLoading}
+              className="field-control mt-2 min-h-20 resize-y"
+              placeholder="Tell them why you are inviting them..."
+            />
+          </label>
 
           <div className="flex justify-end gap-3 pt-4">
             <Button

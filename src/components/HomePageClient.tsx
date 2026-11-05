@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button';
 import { LeaveGroupButton } from './LeaveGroupButton';
 import { CreateGroupModal } from '@/components/CreateGroupModal';
 import { BrowseGroupsDialog } from '@/components/BrowseGroupsDialog';
+import { GroupRequestsPanel } from '@/components/GroupRequestsPanel';
 import { ArrowRight, Plus, UsersRound, WalletCards } from 'lucide-react';
 
 interface Group {
   id: string;
   name: string;
   currency?: string;
+  visibility?: 'public' | 'private';
 }
 
 interface HomePageClientProps {
@@ -65,6 +67,10 @@ export default function HomePageClient({
       </section>
 
       {userId ? (
+        <div className="mt-8"><GroupRequestsPanel /></div>
+      ) : null}
+
+      {userId ? (
         <div className="mt-8 grid gap-8 lg:grid-cols-[1.4fr_0.8fr]">
           <section className="space-y-8">
             <div>
@@ -86,7 +92,7 @@ export default function HomePageClient({
                       <div className="mt-5 flex items-center justify-between gap-3">
                         <div className="min-w-0">
                           <Link href={`/groups/${group.id}`} className="block truncate font-semibold tracking-tight hover:text-primary">{group.name}</Link>
-                          <span className="mt-1 block text-xs text-muted-foreground">Currency · {group.currency || 'INR'}</span>
+                          <span className="mt-1 block text-xs text-muted-foreground">{group.visibility === 'public' ? 'Public' : 'Private'} · Currency {group.currency || 'INR'}</span>
                         </div>
                         {userId && <span onClick={(event) => event.stopPropagation()}><LeaveGroupButton groupId={group.id} userId={userId} token={token} /></span>}
                       </div>

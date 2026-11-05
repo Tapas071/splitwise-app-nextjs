@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, serializeDoc, toObjectId } from '../../../../../../lib/mongodb';
+import { isGroupAdmin } from '../../../../../../lib/group-access';
 
 export async function POST(
   req: NextRequest,
@@ -7,6 +8,8 @@ export async function POST(
 ) {
   try {
     const { groupId } = await ctx.params;
+    const userId = req.headers.get('x-user-id');
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { description, amount, paidById, splitAmong } = await req.json();
 
     if (!description || !amount || !paidById || !splitAmong) {
@@ -17,6 +20,10 @@ export async function POST(
     const group = await db.collection('groups').findOne({ _id: toObjectId(groupId) });
     if (!group) {
       return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+    }
+    const userGroups = db.collection('userGroups');
+    if (!(await userGroups.findOne({ userId, groupId }))) {
+      return NextResponse.json({ error: 'Only group members can add expenses.' }, { status: 403 });
     }
 
     const paidByUser = await db.collection('users').findOne({ _id: toObjectId(paidById) });
@@ -53,7 +60,12 @@ export async function POST(
 export async function GET(req: NextRequest, ctx: RouteContext<'/api/groups/[groupId]/expense'>) {
   try {
     const { groupId } = await ctx.params;
+    const userId = req.headers.get('x-user-id');
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const db = await getDb();
+    if (!(await db.collection('userGroups').findOne({ userId, groupId }))) {
+      return NextResponse.json({ error: 'Only group members can view expenses.' }, { status: 403 });
+    }
     const expenses = await db.collection('expenses').find({ groupId }).toArray();
     return NextResponse.json(expenses.map((expense) => serializeDoc(expense)), { status: 200 });
   } catch (error) {
@@ -65,6 +77,8 @@ export async function GET(req: NextRequest, ctx: RouteContext<'/api/groups/[grou
 export async function DELETE(req: NextRequest, ctx: RouteContext<'/api/groups/[groupId]/expense'>) {
   try {
     const { groupId } = await ctx.params;
+    const userId = req.headers.get('x-user-id');
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { expenseId } = await req.json();
 
     if (!expenseId) {
@@ -72,6 +86,9 @@ export async function DELETE(req: NextRequest, ctx: RouteContext<'/api/groups/[g
     }
 
     const db = await getDb();
+    if (!(await isGroupAdmin(db, groupId, userId))) {
+      return NextResponse.json({ error: 'Only group admins can remove expenses.' }, { status: 403 });
+    }
     const expense = await db.collection('expenses').findOne({ _id: toObjectId(expenseId), groupId });
     if (!expense) {
       return NextResponse.json({ error: 'Expense not found' }, { status: 404 });
@@ -88,6 +105,8 @@ export async function DELETE(req: NextRequest, ctx: RouteContext<'/api/groups/[g
 export async function PATCH(req: NextRequest, ctx: RouteContext<'/api/groups/[groupId]/expense'>) {
   try {
     const { groupId } = await ctx.params;
+    const userId = req.headers.get('x-user-id');
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { expenseId, description, amount, paidById, splitAmong } = await req.json();
 
     if (!expenseId) {
@@ -95,6 +114,9 @@ export async function PATCH(req: NextRequest, ctx: RouteContext<'/api/groups/[gr
     }
 
     const db = await getDb();
+    if (!(await isGroupAdmin(db, groupId, userId))) {
+      return NextResponse.json({ error: 'Only group admins can edit expenses.' }, { status: 403 });
+    }
     const existingExpense = await db.collection('expenses').findOne({ _id: toObjectId(expenseId), groupId });
 
     if (!existingExpense) {

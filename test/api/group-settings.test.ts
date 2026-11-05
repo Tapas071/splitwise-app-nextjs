@@ -35,7 +35,7 @@ describe('PATCH /api/groups/[groupId]/settings', () => {
   let groupFindOne: jest.Mock;
 
   beforeEach(() => {
-    membershipFindOne = jest.fn().mockResolvedValue({ userId, groupId });
+    membershipFindOne = jest.fn().mockResolvedValue({ userId, groupId, role: 'admin' });
     groupUpdateOne = jest.fn().mockResolvedValue({ matchedCount: 1 });
     groupFindOne = jest.fn().mockResolvedValue({ _id: groupObjectId, name: 'Updated trip', currency: 'INR' });
     mockedGetDb.mockResolvedValue({

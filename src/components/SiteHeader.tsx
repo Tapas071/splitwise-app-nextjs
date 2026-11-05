@@ -8,9 +8,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 
 interface SiteHeaderProps {
   isAuthenticated: boolean;
+  firstName?: string;
 }
 
-export function SiteHeader({ isAuthenticated }: SiteHeaderProps) {
+export function SiteHeader({ isAuthenticated, firstName = '' }: SiteHeaderProps) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -50,9 +51,16 @@ export function SiteHeader({ isAuthenticated }: SiteHeaderProps) {
           {isAuthenticated && (
             <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="icon" className="size-10 rounded-full" aria-label="Open profile menu">
-                  <UserRound className="size-[1.15rem]" />
-                </Button>
+                <button
+                  type="button"
+                  className="group flex min-w-12 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-label={firstName ? `Open ${firstName}'s profile menu` : 'Open profile menu'}
+                >
+                  <span className="grid size-9 place-items-center rounded-full border border-border bg-background text-foreground shadow-sm transition-colors group-hover:border-primary/40">
+                    <UserRound className="size-[1.1rem]" />
+                  </span>
+                  <span className="max-w-20 truncate text-[0.65rem] font-semibold leading-tight">{firstName || 'Profile'}</span>
+                </button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-sm rounded-2xl border-border bg-popover p-6">
                 <DialogHeader className="items-center text-center">

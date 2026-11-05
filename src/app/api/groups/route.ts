@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
-    const { name } = await req.json();
+    const { name, visibility = 'private' } = await req.json();
     const userId = req.headers.get('x-user-id');
 
     if (!userId) {
@@ -13,11 +13,16 @@ export async function POST(req: NextRequest) {
     if (typeof name !== 'string' || !name.trim()) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+    if (visibility !== 'public' && visibility !== 'private') {
+      return NextResponse.json({ error: 'Visibility must be public or private' }, { status: 400 });
+    }
 
     const db = await getDb();
     const result = await db.collection('groups').insertOne({
       name: name.trim(),
       currency: 'INR',
+      visibility,
+      createdBy: userId,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -25,6 +30,7 @@ export async function POST(req: NextRequest) {
     await db.collection('userGroups').insertOne({
       userId,
       groupId: result.insertedId.toString(),
+      role: 'admin',
       createdAt: new Date(),
     });
 
@@ -32,6 +38,8 @@ export async function POST(req: NextRequest) {
       _id: result.insertedId,
       name: name.trim(),
       currency: 'INR',
+      visibility,
+      createdBy: userId,
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -43,11 +51,18 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const db = await getDb();
-    const allGroups = await db.collection('groups').find({}).toArray();
-    return NextResponse.json(allGroups.map((group:any) => serializeDoc(group)), { status: 200 });
+    const userId = req.headers.get('x-user-id');
+    const memberships = userId ? await db.collection('userGroups').find({ userId }).toArray() : [];
+    const groupIds = memberships
+      .map((membership) => toObjectId(String(membership.groupId)))
+      .filter((id): id is NonNullable<typeof id> => Boolean(id));
+    const allGroups = await db.collection('groups').find({
+      $or: [{ visibility: 'public' }, { _id: { $in: groupIds } }, { visibility: { $exists: false } }],
+    }).toArray();
+    return NextResponse.json(allGroups.map((group: any) => serializeDoc({ visibility: 'private', ...group })), { status: 200 });
   } catch (error) {
     console.error('Error fetching groups:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

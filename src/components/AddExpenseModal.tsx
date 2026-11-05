@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/currencies';
+import { Plus, Send } from 'lucide-react';
 
 interface Member {
   id: string;
@@ -24,6 +25,7 @@ interface AddExpenseModalProps {
   memberNames: { [key: string]: string };
   token: string;
   currency?: string;
+  composer?: boolean;
 }
 
 interface CustomSplit {
@@ -31,7 +33,7 @@ interface CustomSplit {
   amount: string;
 }
 
-export const AddExpenseModal = ({ members, groupId, memberNames, token, currency = 'INR' }: AddExpenseModalProps) => {
+export const AddExpenseModal = ({ members, groupId, memberNames, token, currency = 'INR', composer = false }: AddExpenseModalProps) => {
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
@@ -154,9 +156,14 @@ export const AddExpenseModal = ({ members, groupId, memberNames, token, currency
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full rounded-xl">Add Expense</Button>
+        {composer ? (
+          <Button className="h-12 w-full justify-between rounded-2xl px-4 text-left shadow-lg shadow-primary/15">
+            <span className="flex items-center gap-3"><span className="grid size-8 place-items-center rounded-full bg-primary-foreground/15"><Plus className="size-4" /></span><span className="font-medium">Add an expense to the chat…</span></span>
+            <Send className="size-4" />
+          </Button>
+        ) : <Button className="w-full rounded-xl">Add Expense</Button>}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] bg-popover border-border max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-h-[85dvh] overflow-y-auto bg-popover border-border sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="text-popover-foreground">Add New Expense</DialogTitle>
           <DialogDescription className="text-muted-foreground">

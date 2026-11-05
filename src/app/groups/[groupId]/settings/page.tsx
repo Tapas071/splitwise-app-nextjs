@@ -12,6 +12,7 @@ export default async function GroupSettingsPage({ params }: { params: Promise<{ 
       groupId={groupId}
       initialName={group.name}
       initialCurrency={group.currency || 'INR'}
+      initialVisibility={group.visibility || 'private'}
     />
   );
 }

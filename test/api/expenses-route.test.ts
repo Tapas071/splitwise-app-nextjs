@@ -18,7 +18,7 @@ const splitUserId = '64a000000000000000000012';
 function makeRequest(body: unknown) {
   return new Request('http://localhost/api/expenses', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'x-user-id': paidById },
     body: JSON.stringify(body),
   }) as NextRequest;
 }
@@ -37,16 +37,23 @@ function expenseBody(overrides: Record<string, unknown> = {}) {
 describe('POST /api/expenses', () => {
   let groupFindOne: jest.Mock;
   let userFindOne: jest.Mock;
+  let membershipFindOne: jest.Mock;
+  let membershipFind: jest.Mock;
   let expenseInsertOne: jest.Mock;
 
   beforeEach(() => {
     groupFindOne = jest.fn().mockResolvedValue({ _id: new ObjectId(groupId) });
     userFindOne = jest.fn().mockResolvedValue({ _id: new ObjectId(paidById) });
+    membershipFindOne = jest.fn().mockResolvedValue({ userId: paidById, groupId });
+    membershipFind = jest.fn().mockReturnValue({ toArray: jest.fn().mockResolvedValue([
+      { userId: paidById, groupId }, { userId: splitUserId, groupId },
+    ]) });
     expenseInsertOne = jest.fn().mockResolvedValue({ insertedId: new ObjectId('64a000000000000000000013') });
     mockedGetDb.mockResolvedValue({
       collection: jest.fn((name: string) => {
         if (name === 'groups') return { findOne: groupFindOne };
         if (name === 'users') return { findOne: userFindOne };
+        if (name === 'userGroups') return { findOne: membershipFindOne, find: membershipFind };
         return { insertOne: expenseInsertOne };
       }),
     } as never);

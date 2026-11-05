@@ -65,6 +65,10 @@ npm run build
 npm start
 ```
 
+## Contributing and branching
+
+Use `main` for ongoing development and versioned `release/<major>.<minor>` branches for stabilization and maintenance. See the [branching strategy guide](docs/branching-strategy.md) for branch naming, release and patch workflows, and pull request checks.
+
 ## Frontend TODO
 
 - Remove expenses

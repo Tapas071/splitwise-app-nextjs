@@ -33,7 +33,7 @@ describe('CreateGroupModal', () => {
     expect(global.fetch).toHaveBeenCalledWith('/api/groups', expect.objectContaining({
       method: 'POST',
       headers: expect.objectContaining({ Authorization: 'Bearer token' }),
-      body: JSON.stringify({ name: 'Weekend trip' }),
+      body: JSON.stringify({ name: 'Weekend trip', visibility: 'private' }),
     }));
     expect(mockRefresh).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
