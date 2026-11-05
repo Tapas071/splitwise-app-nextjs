@@ -35,7 +35,7 @@ describe('BrowseGroupsDialog', () => {
     expect(within(dialog).getByText('Weekend Trip')).toBeInTheDocument();
     expect(within(dialog).getByText('Office Lunch')).toBeInTheDocument();
     expect(within(dialog).getAllByText(/Currency/)).toHaveLength(3);
-    expect(within(dialog).getAllByText(/Currency/)[0]).toHaveTextContent('Currency · INR');
+    expect(within(dialog).getAllByText(/Currency/)[0]).toHaveTextContent('Public · Currency INR');
     expect(within(dialog).getByText(/3\s+groups\s+found/)).toBeInTheDocument();
   });
 
@@ -62,20 +62,22 @@ describe('BrowseGroupsDialog', () => {
     expect(screen.getByText('No groups found')).toBeInTheDocument();
   });
 
-  it('joins a group, closes the dialog, and refreshes the dashboard', async () => {
+  it('sends a join request and refreshes the dashboard', async () => {
     const user = userEvent.setup();
     (global.fetch as jest.Mock).mockResolvedValue({ ok: true, json: jest.fn() });
     render(<BrowseGroupsDialog groups={groups} userId="user-1" />);
     await user.click(screen.getByRole('button', { name: /browse groups/i }));
-    await user.click(within(screen.getByRole('dialog')).getAllByRole('button', { name: /join/i })[0]);
+    await user.click(within(screen.getByRole('dialog')).getAllByRole('button', { name: /request/i })[0]);
 
     expect(global.fetch).toHaveBeenCalledWith('/api/groups/group-1/member', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: 'user-1' }),
+      body: JSON.stringify({ action: 'join' }),
     });
     expect(mockRefresh).toHaveBeenCalledTimes(1);
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Your join request was sent');
+    expect(within(screen.getByRole('dialog')).getAllByRole('button', { name: /requested/i })).toHaveLength(1);
   });
 
   it('keeps the dialog open and shows the API error when joining fails', async () => {
@@ -86,7 +88,7 @@ describe('BrowseGroupsDialog', () => {
     });
     render(<BrowseGroupsDialog groups={groups} userId="user-1" />);
     await user.click(screen.getByRole('button', { name: /browse groups/i }));
-    await user.click(within(screen.getByRole('dialog')).getAllByRole('button', { name: /join/i })[0]);
+    await user.click(within(screen.getByRole('dialog')).getAllByRole('button', { name: /request/i })[0]);
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Already a member');
     expect(screen.getByRole('dialog')).toBeInTheDocument();

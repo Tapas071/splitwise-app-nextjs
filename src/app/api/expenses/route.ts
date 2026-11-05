@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb, serializeDoc, toObjectId } from '../../../../lib/mongodb';
 
-// GET /api/expenses - Get all expenses
-export async function GET() {
+// GET /api/expenses - Get expenses visible to the authenticated user.
+export async function GET(req: NextRequest) {
   try {
+    const userId = req.headers.get('x-user-id');
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const db = await getDb();
-    const expenses = await db.collection('expenses').find({}).toArray();
+    const memberships = await db.collection('userGroups').find({ userId }).toArray();
+    const groupIds = memberships.map((membership) => String(membership.groupId));
+    const expenses = groupIds.length
+      ? await db.collection('expenses').find({ groupId: { $in: groupIds } }).toArray()
+      : [];
     return NextResponse.json(expenses.map((expense) => serializeDoc(expense)));
   } catch (error) {
     console.error(error);
@@ -16,6 +22,9 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const { description, amount, paidById, groupId, splitAmong } = await req.json();
+    const requesterId = req.headers.get('x-user-id');
+
+    if (!requesterId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     if (!description || typeof amount !== 'number' || !paidById || !groupId || !Array.isArray(splitAmong)) {
       return NextResponse.json({ error: 'Missing or invalid required fields' }, { status: 400 });
@@ -28,6 +37,17 @@ export async function POST(req: NextRequest) {
     const group = await groups.findOne({ _id: toObjectId(groupId) });
     if (!group) {
       return NextResponse.json({ error: 'Group not found' }, { status: 404 });
+    }
+
+    const userGroups = db.collection('userGroups');
+    const requesterMembership = await userGroups.findOne({ userId: requesterId, groupId });
+    if (!requesterMembership) {
+      return NextResponse.json({ error: 'Only group members can add expenses.' }, { status: 403 });
+    }
+    const participantIds = [...new Set([paidById, ...splitAmong.map((member: { userId: string }) => member.userId)])];
+    const participantMemberships = await userGroups.find({ groupId, userId: { $in: participantIds } }).toArray();
+    if (participantMemberships.length !== participantIds.length) {
+      return NextResponse.json({ error: 'Payer and split participants must be group members.' }, { status: 400 });
     }
 
     const paidByUser = await users.findOne({ _id: toObjectId(paidById) });

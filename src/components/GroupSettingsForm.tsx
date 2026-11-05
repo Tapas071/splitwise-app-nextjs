@@ -11,12 +11,14 @@ interface GroupSettingsFormProps {
   groupId: string;
   initialName: string;
   initialCurrency: string;
+  initialVisibility: 'public' | 'private';
 }
 
-export function GroupSettingsForm({ groupId, initialName, initialCurrency }: GroupSettingsFormProps) {
+export function GroupSettingsForm({ groupId, initialName, initialCurrency, initialVisibility }: GroupSettingsFormProps) {
   const router = useRouter();
   const [name, setName] = useState(initialName);
   const [currency, setCurrency] = useState(initialCurrency);
+  const [visibility, setVisibility] = useState(initialVisibility);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -30,12 +32,13 @@ export function GroupSettingsForm({ groupId, initialName, initialCurrency }: Gro
       const response = await fetch(`/api/groups/${groupId}/settings`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, currency }),
+        body: JSON.stringify({ name, currency, visibility }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Could not save group settings.');
       setName(data.group.name);
       setCurrency(data.group.currency || 'INR');
+      setVisibility(data.group.visibility || 'private');
       setSuccess('Group settings saved.');
       router.refresh();
     } catch (cause) {
@@ -70,12 +73,18 @@ export function GroupSettingsForm({ groupId, initialName, initialCurrency }: Gro
               {CURRENCIES.map((option) => <option key={option.code} value={option.code}>{option.code} — {option.name} ({option.symbol})</option>)}
             </select>
           </label>
+          <label className="space-y-2 text-sm font-medium">Group visibility
+            <select className="field-control" value={visibility} onChange={(event) => setVisibility(event.target.value as 'public' | 'private')}>
+              <option value="private">Private — invitation only</option>
+              <option value="public">Public — members can request to join</option>
+            </select>
+          </label>
         </div>
         <div className="flex items-start gap-3 rounded-xl border border-primary/15 bg-primary/5 p-4">
           <Coins className="mt-0.5 size-5 shrink-0 text-primary" />
           <div>
             <p className="text-sm font-semibold">Amounts will display in {currency} ({selectedCurrency.name})</p>
-            <p className="mt-1 text-sm leading-6 text-muted-foreground">Example: {formatCurrency(1250, currency)}. Changing the currency changes how existing amounts are labeled; it does not convert or recalculate them. All group members can update this setting.</p>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">Example: {formatCurrency(1250, currency)}. Changing the currency changes how existing amounts are labeled; it does not convert or recalculate them. Only group admins can update these settings.</p>
           </div>
         </div>
         {error && <p role="alert" className="mt-4 rounded-xl border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</p>}

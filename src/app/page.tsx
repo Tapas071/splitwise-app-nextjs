@@ -8,6 +8,7 @@ interface Group {
   id: string;
   name: string;
   currency: string;
+  visibility: 'public' | 'private';
 }
 
 interface User {
@@ -18,12 +19,15 @@ interface User {
 
 async function getGroups(): Promise<Group[]> {
   const db = await getDb();
-  const groups = await db.collection('groups').find({}).toArray();
+  const groups = await db.collection('groups').find({
+    $or: [{ visibility: 'public' }, { visibility: { $exists: false } }],
+  }).toArray();
 
   return groups.map((group) => ({
     id: group._id.toString(),
     name: String(group.name),
     currency: String(group.currency || 'INR'),
+    visibility: String(group.visibility || 'public') as 'public' | 'private',
   }));
 }
 
@@ -39,6 +43,7 @@ async function getUserGroups(userId: string): Promise<Group[]> {
     id: group._id.toString(),
     name: String(group.name),
     currency: String(group.currency || 'INR'),
+    visibility: String(group.visibility || 'private') as 'public' | 'private',
   }));
 }
 
