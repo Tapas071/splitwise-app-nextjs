@@ -30,7 +30,7 @@ interface Group {
   // You might need to add other fields like members, expenses, etc.
 }
 export const getGroupData = async (id: string, token: string): Promise<Group> => {
-  const baseURL = "http://localhost:3000";
+  const baseURL = process.env.BASE_URL || "http://localhost:3000";
 
   try {
     const response = await axios.get<Group>(`${baseURL}/api/groups/${id}`, {
